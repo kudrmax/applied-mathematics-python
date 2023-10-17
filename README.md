@@ -1,5 +1,5 @@
 <p align="center">
-      <img src="doc/logo.jpg" width="726">
+      <img src="doc/logo.jpg">
 </p>
 
 # Python для решения задач прикладной математики
