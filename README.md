@@ -1,3 +1,7 @@
+<p align="center">
+      <img src="doc/logo.jpg" width="726">
+</p>
+
 # Python для решения задач прикладной математики
 
 ## Что это
