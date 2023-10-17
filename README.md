@@ -1,6 +1,4 @@
-<p align="center">
-      <img src="doc/logo.jpg">
-</p>
+![](doc/logo.jpg)
 
 # Python для решения задач прикладной математики
 
