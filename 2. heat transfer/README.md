@@ -4,7 +4,7 @@
 
 # Код
 
-[Посмотреть jupyter notebook](task.ipynb)
+[Посмотреть jupyter notebook](heat_transfer.ipynb)
 
 # Результат
 
