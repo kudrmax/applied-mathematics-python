@@ -1,5 +1,3 @@
-![Fractal GIF](images/fractal.gif)
-
 # Задача
 
 Построить множество Жулиа и Мандельброта для различных функций.
@@ -10,6 +8,7 @@
 
 # Результат
 
+![Fractal GIF](images/fractal.gif)
 ![f1.png](images/f1.png)
 ![f2.png](images/f2.png)
 ![f3.png](images/f3.png)
