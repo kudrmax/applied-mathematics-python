@@ -23,6 +23,7 @@
 3. [Вычисление энергии молекулярной решетки](ferromagnetic)
 4. [Наискорейший градиентный спуск](mathematical-optimization/gradients)
 5. [Оптимизация вложения капитала через уравнения Беллмана](mathematical-optimization/bellman)
+6. в процессе...
 
 # Контакты
 
