@@ -1,3 +1,6 @@
 [submodule "mathematical-optimization"]
 	path = mathematical-optimization
 	url = https://github.com/kudrmax/mathematical-optimization.git
+[submodule "numerical-methods"]
+	path = numerical-methods
+	url = https://github.com/kudrmax/numerical-methods.git
