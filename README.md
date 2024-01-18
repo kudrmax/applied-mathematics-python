@@ -21,8 +21,8 @@
 1. [Визуализация фрактала](fractals)
 2. [Моделирование нагревания 2D пластины](heat_transfer)
 3. [Вычисление энергии молекулярной решетки](ferromagnetic)
-4. [Наискорейший градиентный спуск](mathematical-optimization/gradients)
-5. [Оптимизация вложения капитала через уравнения Беллмана](mathematical-optimization/bellman)
+4. [Наискорейший градиентный спуск](https://github.com/kudrmax/mathematical-optimization/tree/448f8a4ab6336b4db697c0123eaeb2a0cff725f0/gradients)
+5. [Оптимизация вложения капитала через уравнения Беллмана](https://github.com/kudrmax/mathematical-optimization/tree/448f8a4ab6336b4db697c0123eaeb2a0cff725f0/bellman)
 6. в процессе...
 
 # Контакты
