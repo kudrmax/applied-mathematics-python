@@ -1,0 +1,3 @@
+[submodule "mathematical-optimization"]
+	path = mathematical-optimization
+	url = https://github.com/kudrmax/mathematical-optimization.git
