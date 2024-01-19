@@ -28,3 +28,11 @@
 # Контакты
 
 Макс Кудряшов - [GitHub](https://github.com/kudrmax/) - [Telegram](t.me/kudrmax)
+
+| Название                           | Пример |
+|------------------------------------|--------|
+| [Визуализация фрактала](fractals)  | ![](fractals/images/fractal.gif)  |
+| [Моделирование нагревания 2D пластины](heat-transfer)  | ![](heat-transfer/images/heat_transfer.gif)  |
+| [Вычисление энергии молекулярной решетки](ferromagnetic)  |   |
+| [Наискорейший градиентный спуск](https://github.com/kudrmax/mathematical-optimization/tree/448f8a4ab6336b4db697c0123eaeb2a0cff725f0/gradients) | |
+| [Оптимизация вложения капитала через уравнения Беллмана](https://github.com/kudrmax/mathematical-optimization/tree/448f8a4ab6336b4db697c0123eaeb2a0cff725f0/bellman) | |
