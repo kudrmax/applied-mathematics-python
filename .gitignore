@@ -1,10 +1,9 @@
-.DS_Store
 .idea/
+__pycache__
+*/__pycache__
 .ipynb_checkpoints/
-*/.DS_Store
 */.ipynb_checkpoints/
+.DS_Store
+*/.DS_Store
 */чужие
-heat transfer/for_gif
-heat_transfer/for_gif
 heat-transfer/for-gif
-boil/__pycache__
