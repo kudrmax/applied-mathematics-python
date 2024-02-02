@@ -37,10 +37,18 @@ def vclip(v: np.ndarray, vrange: tuple[float, float]):
     norm = np.linalg.norm(v, axis=1)
     mask = norm > vrange[1]
     if np.any(mask):
-        v[mask] *= vrange[1] / norm[mask, None] # np.newaxis # np.reshape # norm[mask].reshape(-1, -1) -1 — автоматически посчитать
+        # np.newaxis # np.reshape # norm[mask].reshape(-1, -1) -1 — автоматически посчитать
+        v[mask] *= vrange[1] / norm[mask, None]
 
 
 def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     boids[:, 2:4] += 0.5 * dt * boids[:, 4:6]  # скорости # v = v*dt # возможно тут нужно убрать умножение на 0.5
     vclip(boids[:, 2:4], vrange)
     boids[:, 0:2] += dt * boids[:, 2:4]  # координаты # s = s_0 + v_0*dt + 0.5*a*dtˆ2
+
+
+def distances(vecs: np.ndarray) -> np.ndarray:
+    n, m = vecs.shape
+    delta = vecs.reshape((n, 1, m)) - vecs.reshape((1, n, m))
+    D = np.linalg.norm(delta, axis=2)
+    return D
