@@ -52,3 +52,25 @@ def distances(vecs: np.ndarray) -> np.ndarray:
     delta = vecs.reshape((n, 1, m)) - vecs.reshape((1, n, m))
     D = np.linalg.norm(delta, axis=2)
     return D
+
+
+def flocking(boids: np.ndarray,
+             perception: float,
+             coeff: np.array,
+             asp: float,
+             vrange: tuple):
+    D = distances(boids[:, 0:2])
+    N = boids.shape[0]
+    D[range(N), range(N)] = perception + 1  # выкидываем из D растояние между i и i
+    mask = D < perception
+    wal = walls(boids, asp)
+    for i in range(N):
+        if not np.any(mask[i]):  # нет соседей
+            coh = np.zeros(2)
+            alg = np.zeros(2)
+            sep = np.zeros(2)
+        else:
+            coh = cohesion(boids, i, mask[i], perception)
+            coh = alignment(boids, i, mask[i], vrange)
+            coh = separation(boids, i, mask[i], perception)
+        boids[i, 4:6] = coeff[0] * coh + coeff[1] * alg + coeff[2] * sep + coeff[3] * wal[i]

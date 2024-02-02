@@ -33,6 +33,7 @@ arrows = scene.Arrow(arrows=directions(boids, dt),
 
 
 def update(event):
+    flocking(boids, perseption, coeffs, asp, vrange)
     propagate(boids, dt, vrange)
     arrows.set_data(arrows=directions(boids, dt))
     canvas.update()
