@@ -6,6 +6,7 @@ from funcs import init_boids
 from funcs import directions
 
 app.use_app('pyqt5')
+# app.use_app('pyglet')
 
 w, h = 640, 480
 N = 500
