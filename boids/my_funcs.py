@@ -74,6 +74,7 @@ def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     dt
     vrange
     """
+    # boids[:, 2:4] += boids[:, 4:6]
     boids[:, 2:4] += 0.5 * dt * boids[:, 4:6]  # скорости # v = v*dt
     vclip(boids[:, 2:4], vrange)  # обрезаем скорости, если они вышли за vrange
     boids[:, 0:2] += dt * boids[:, 2:4]  # координаты # s = s_0 + v_0*dt + 0.5*a*dtˆ2
@@ -187,4 +188,5 @@ def flocking(boids: np.ndarray,
         a = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
         # print(a)
         # boids[i, 4:6] = [20.0, 20.0]
-        boids[i, 4:6] = a * 10
+        boids[i, 4:6] = a
+        # print(boids[i, 4:6])
