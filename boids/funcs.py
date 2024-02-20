@@ -75,8 +75,8 @@ def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     vrange
     """
     # @todo разобраться
-    boids[:, 2:4] += 0.5 * dt * boids[:, 4:6]  # скорости # v = v*dt # возможно тут нужно убрать умножение на 0.5
-    vclip(boids[:, 2:4], vrange)
+    boids[:, 2:4] += 0.5 * dt * boids[:, 4:6]  # скорости # v = v*dt
+    vclip(boids[:, 2:4], vrange)  # обрезаем скорости, если они вышли за vrange
     boids[:, 0:2] += dt * boids[:, 2:4]  # координаты # s = s_0 + v_0*dt + 0.5*a*dtˆ2
 
 
@@ -99,9 +99,9 @@ def distances(vecs: np.ndarray) -> np.ndarray:
 
 
 def compute_cohesion(boids: np.ndarray,
-             id: int,
-             mask_row: np.ndarray,
-             perception: float) -> np.ndarray:
+                     id: int,
+                     mask: np.array,
+                     perception: float) -> np.array:
     """
     Steer to move towards the average position (center of mass) of local flockmates
 
@@ -111,21 +111,32 @@ def compute_cohesion(boids: np.ndarray,
     ----------
     boids: массив птиц
     id: индекс птицы в массиве boids
-    mask_row: если mask_row[j] == True, то значит птица j взаиможействует с данной птицей id
+    mask: если mask[j] == True, то значит птица j взаиможействует с данной птицей id
     perception
 
     Returns
     -------
-
+    Вектор новых ускорений
     """
-    center_pos = boids[id][0:2]
-    k = 1
-    for j in range(boids.shape[0]):
-        if mask_row[j]:
-            center_pos += boids[j][0:2]
-            k += 1
-    center_pos /= k
-    return center_pos
+    # brute force решение
+    # new_pos_old = boids[id][0:2]
+    # k = 1
+    # for j in range(boids.shape[0]):
+    #     if mask[j]:
+    #         new_pos_old += boids[j][0:2]
+    #         k += 1
+    # new_pos_old /= k
+
+    # нормальное решение
+    new_pos = boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]
+    new_pos /= 1 + boids[mask].shape[0]
+    old_pos = boids[id][0:2]
+    dir = new_pos - old_pos  # delta_pos
+
+    # еще более нормальное решение
+    # new_pos = boids[mask, 0:2].mean(axis=0)
+
+    return new_pos  # @todo возможно нужно как-то нормировать, разделить на perception?
 
 
 def flocking(boids: np.ndarray,
