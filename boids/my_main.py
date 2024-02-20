@@ -17,9 +17,9 @@ global delta_time
 delta_time = 0.0
 
 perseption = 1 / 20  #
-vrange = (0, 0.2)  # ограничения на скорости
+vrange = (0, 0.05)  # ограничения на скорости
 
-coeffs = np.array([100.0, 0.02, 4, 0.03])  # коэффициенты взаисодейлствя
+coeffs = np.array([500.0, 10000.0, 500, 0.03])  # коэффициенты взаисодейлствя
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, ax, ay]
 init_boids(boids, field_size, vrange=vrange)  # создаем птиц

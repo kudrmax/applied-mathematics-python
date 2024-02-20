@@ -79,7 +79,7 @@ def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     vrange
     """
     # boids[:, 2:4] += boids[:, 4:6]
-    boids[:, 2:4] += 0.5 * dt * boids[:, 4:6]  # скорости # v = v*dt
+    boids[:, 2:4] += 0.05 * dt * boids[:, 4:6]  # скорости # v = v*dt
     vclip(boids[:, 2:4], vrange)  # обрезаем скорости, если они вышли за vrange
     boids[:, 0:2] += dt * boids[:, 2:4]  # координаты # s = s_0 + v_0*dt + 0.5*a*dtˆ2
 
@@ -139,6 +139,26 @@ def compute_cohesion(boids: np.ndarray,
     return new_pos - old_pos
 
 
+def compute_separation(boids, id, mask, perception):
+    """
+    steer to avoid crowding local flockmates
+
+    Parameters
+    ----------
+    boids
+    i
+    mask
+    perception
+
+    Returns
+    -------
+
+    """
+    n = boids[mask].shape[0]
+    new_pos = n * boids[id][0:2] - np.sum(boids[mask], axis=0)[0:2]  # == ((r - r1) + (r - r2) +...+ (r - rn)
+    return new_pos / ((new_pos[0] ** 2 + new_pos[1] ** 2) + 1)
+
+
 def flocking(boids: np.ndarray,
              perception: float,
              coeff: np.array,
@@ -170,10 +190,10 @@ def flocking(boids: np.ndarray,
         else:
             separation = compute_separation(boids, i, mask[i], perception)
             # alignment = compute_alignment(boids, i, mask[i], vrange)
-            # cohesion = compute_cohesion(boids, i, mask[i], perception)
+            cohesion = compute_cohesion(boids, i, mask[i], perception)
 
         # @todo временно:
-        separation = np.zeros(2)
+        # separation = np.zeros(2)
         alignment = np.zeros(2)
         # cohesion = np.zeros(2)
 
