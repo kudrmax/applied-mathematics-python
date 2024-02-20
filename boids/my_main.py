@@ -2,9 +2,7 @@ import numpy as np
 from vispy import app, scene
 from vispy.geometry import Rect
 
-# from funcs import init_boids
-# from funcs import directions
-from funcs import *
+from my_funcs import *
 
 app.use_app('pyqt5')
 # app.use_app('pyglet')
@@ -14,20 +12,20 @@ N = 500  # кол-во птиц
 dt = 0.001
 asp = w / h  # мультиплаер
 perseption = 1 / 20  #
-vrange = (0, 0.1)  # ограничения на скорости
+vrange = (0, 1.0)  # ограничения на скорости
 
 coeffs = np.array([0.05, 0.02, 4, 0.03])  # коэффициенты взаисодейлствя
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, ax, ay]
 init_boids(boids, asp, vrange=vrange)  # создаем птиц
-boids[:, 4:6] = 0.1  # задаем птицам ускорения
+boids[:, 4:6] = 200.0  # задаем птицам ускорения
 
 canvas = scene.SceneCanvas(show=True, size=(w, h))  # создаем сцену
 view = canvas.central_widget.add_view()
 view.camera = scene.PanZoomCamera(rect=Rect(0, 0, asp, 1))
 arrows = scene.Arrow(arrows=directions(boids, dt),
                      arrow_color=(1, 1, 1, 1),
-                     arrow_size=5,
+                     arrow_size=10,
                      connect='segments',
                      parent=view.scene)
 

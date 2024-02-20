@@ -74,7 +74,6 @@ def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     dt
     vrange
     """
-    # @todo разобраться
     boids[:, 2:4] += 0.5 * dt * boids[:, 4:6]  # скорости # v = v*dt
     vclip(boids[:, 2:4], vrange)  # обрезаем скорости, если они вышли за vrange
     boids[:, 0:2] += dt * boids[:, 2:4]  # координаты # s = s_0 + v_0*dt + 0.5*a*dtˆ2
@@ -128,15 +127,12 @@ def compute_cohesion(boids: np.ndarray,
     # new_pos_old /= k
 
     # нормальное решение
-    new_pos = boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]
+    new_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]).copy()
     new_pos /= 1 + boids[mask].shape[0]
-    old_pos = boids[id][0:2]
+    old_pos = boids[id][0:2].copy()
     dir = new_pos - old_pos  # delta_pos
 
-    # еще более нормальное решение
-    # new_pos = boids[mask, 0:2].mean(axis=0)
-
-    return new_pos  # @todo возможно нужно как-то нормировать, разделить на perception?
+    return dir  # @todo возможно нужно как-то нормировать, разделить на perception?
 
 
 def flocking(boids: np.ndarray,
@@ -178,4 +174,7 @@ def flocking(boids: np.ndarray,
         # cohesion = np.zeros(2)
 
         # меняем ускорения птиц
-        boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
+        a = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
+        # print(a)
+        # boids[i, 4:6] = [20.0, 20.0]
+        boids[i, 4:6] = a * 100000
