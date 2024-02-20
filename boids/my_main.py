@@ -7,22 +7,25 @@ from my_funcs import *
 app.use_app('pyqt5')
 # app.use_app('pyglet')
 
-w, h = 640, 480  # размеры экрана
+W, H = 640, 480  # размеры экрана
 N = 500  # кол-во птиц
 dt = 0.001
-asp = w / h  # мультиплаер
+ratio = W / H
+w, h = ratio, 1
+field_size = (w, h)
+
 perseption = 1 / 20  #
 vrange = (0, 1.0)  # ограничения на скорости
 
-coeffs = np.array([0.05, 0.02, 4, 0.03])  # коэффициенты взаисодейлствя
+coeffs = np.array([1.0, 0.02, 4, 0.03])  # коэффициенты взаисодейлствя
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, ax, ay]
-init_boids(boids, asp, vrange=vrange)  # создаем птиц
-boids[:, 4:6] = 200.0  # задаем птицам ускорения
+init_boids(boids, field_size, vrange=vrange)  # создаем птиц
+boids[:, 4:6] = 0.0  # задаем птицам ускорения
 
-canvas = scene.SceneCanvas(show=True, size=(w, h))  # создаем сцену
+canvas = scene.SceneCanvas(show=True, size=(W, H))  # создаем сцену
 view = canvas.central_widget.add_view()
-view.camera = scene.PanZoomCamera(rect=Rect(0, 0, asp, 1))
+view.camera = scene.PanZoomCamera(rect=Rect(0, 0, w, h))
 arrows = scene.Arrow(arrows=directions(boids, dt),
                      arrow_color=(1, 1, 1, 1),
                      arrow_size=10,
@@ -35,7 +38,7 @@ def paint_arrows(arrows):
 
 
 def update(event):
-    flocking(boids, perseption, coeffs, asp, vrange)  # пересчет ускорений (взаимодействие между птицами)
+    flocking(boids, perseption, coeffs, ratio, vrange)  # пересчет ускорений (взаимодействие между птицами)
     propagate(boids, dt, vrange)  # пересчет скоростей на основе ускорений
     paint_arrows(arrows)  # отрисовка стрелок
     canvas.update()  # отображение

@@ -4,22 +4,22 @@ from vispy import app, scene
 import numpy as np
 
 
-def init_boids(boids: np.ndarray, asp: float, vrange: tuple = (0., 1.)):
+def init_boids(boids: np.ndarray, field_size: tuple, vrange: tuple = (0., 1.)):
     """
     Функция, отвечающая за создание птиц
 
     Parameters
     ----------
     boids
-    asp
+    ratio
     vrange
     """
     n = boids.shape[0]
     rng = np.random.default_rng()
 
     # задаем рандомные начальные положения
-    boids[:, 0] = rng.uniform(0., asp, size=n)  # координата x
-    boids[:, 1] = rng.uniform(0., 1., size=n)  # координата y
+    boids[:, 0] = rng.uniform(0., field_size[0], size=n)  # координата x
+    boids[:, 1] = rng.uniform(0., field_size[1], size=n)  # координата y
 
     # задаем рандомные начальные скорости
     alpha = rng.uniform(0., 2 * np.pi, size=n)  # угол наклона вектора
@@ -135,10 +135,19 @@ def compute_cohesion(boids: np.ndarray,
     return dir  # @todo возможно нужно как-то нормировать, разделить на perception?
 
 
+def compute_cohesion_by_bober(boids: np.ndarray,
+                              idx: int,
+                              neigh_mask: np.ndarray,
+                              perception: float) -> np.ndarray:
+    center = boids[neigh_mask, :2].mean(axis=0)
+    a = (center - boids[idx, :2]) / perception
+    return a
+
+
 def flocking(boids: np.ndarray,
              perception: float,
              coeff: np.array,
-             asp: float,
+             field_size: tuple,
              vrange: tuple):
     """
     Функция, отвечающая за взаимодействие птиц между собой
@@ -148,14 +157,14 @@ def flocking(boids: np.ndarray,
     boids
     perception
     coeff
-    asp
+    field_size
     vrange
     """
     D = distances(boids[:, 0:2])  # матрица с расстояниями между всеми птицами
     N = boids.shape[0]
     D[range(N), range(N)] = np.inf  # выкидываем расстояния между i и i
     mask = D < perception  # если расстояние достаточно близкое (в круге радиуса perception), то True
-    # walls = create_walls(boids, asp)  # создание стен
+    # walls = create_walls(boids, ratio)  # создание стен
     for i in range(N):
 
         # вычисляем насколько должны поменяться ускорения
@@ -166,7 +175,8 @@ def flocking(boids: np.ndarray,
         else:
             # separation = compute_separation(boids, i, mask[i], perception)
             # alignment = compute_alignment(boids, i, mask[i], vrange)
-            cohesion = compute_cohesion(boids, i, mask[i], perception)
+            # cohesion = compute_cohesion(boids, i, mask[i], perception)
+            cohesion = compute_cohesion_by_bober(boids, i, mask[i], perception)
 
         # @todo временно:
         separation = np.zeros(2)
@@ -177,4 +187,4 @@ def flocking(boids: np.ndarray,
         a = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
         # print(a)
         # boids[i, 4:6] = [20.0, 20.0]
-        boids[i, 4:6] = a * 100000
+        boids[i, 4:6] = a * 10
