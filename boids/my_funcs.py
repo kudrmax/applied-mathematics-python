@@ -4,6 +4,10 @@ from vispy import app, scene
 import numpy as np
 
 
+def paint_arrows(arrows, boids, dt):
+    arrows.set_data(arrows=directions(boids, dt))  # отрисовка стрелок
+
+
 def init_boids(boids: np.ndarray, field_size: tuple, vrange: tuple = (0., 1.)):
     """
     Функция, отвечающая за создание птиц
@@ -131,18 +135,8 @@ def compute_cohesion(boids: np.ndarray,
     new_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]).copy()
     new_pos /= 1 + boids[mask].shape[0]
     old_pos = boids[id][0:2].copy()
-    dir = new_pos - old_pos  # delta_pos
 
-    return dir  # @todo возможно нужно как-то нормировать, разделить на perception?
-
-
-def compute_cohesion_by_bober(boids: np.ndarray,
-                              idx: int,
-                              neigh_mask: np.ndarray,
-                              perception: float) -> np.ndarray:
-    center = boids[neigh_mask, :2].mean(axis=0)
-    a = (center - boids[idx, :2]) / perception
-    return a
+    return new_pos - old_pos
 
 
 def flocking(boids: np.ndarray,
@@ -174,10 +168,9 @@ def flocking(boids: np.ndarray,
             alignment = np.zeros(2)
             cohesion = np.zeros(2)
         else:
-            # separation = compute_separation(boids, i, mask[i], perception)
+            separation = compute_separation(boids, i, mask[i], perception)
             # alignment = compute_alignment(boids, i, mask[i], vrange)
             # cohesion = compute_cohesion(boids, i, mask[i], perception)
-            cohesion = compute_cohesion_by_bober(boids, i, mask[i], perception)
 
         # @todo временно:
         separation = np.zeros(2)
@@ -185,8 +178,4 @@ def flocking(boids: np.ndarray,
         # cohesion = np.zeros(2)
 
         # меняем ускорения птиц
-        a = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
-        # print(a)
-        # boids[i, 4:6] = [20.0, 20.0]
-        boids[i, 4:6] = a
-        # print(boids[i, 4:6])
+        boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
