@@ -3,6 +3,8 @@ from vispy import app, scene
 
 import numpy as np
 
+# def my_rotate
+
 
 def paint_arrows(arrows, boids, dt):
     arrows.set_data(arrows=directions(boids, dt))  # отрисовка стрелок
@@ -175,9 +177,18 @@ def compute_alignment(boids, id, mask, vrange):
     -------
 
     # """
-    avarage_velocity = boids[mask, 2:4].mean(axis=0)
-    old_velocity = boids[id, 2:4]
-    return (avarage_velocity - old_velocity)
+    # avarage_velocity = boids[mask, 2:4].mean(axis=0)
+    # old_velocity = boids[id, 2:4]
+    # return (avarage_velocity - old_velocity)
+
+    avarage_v = boids[mask].mean(axis=0)
+    this_v = boids[id,].copy()
+    n_this_v = this_v.copy()
+    n_this_v[2:3] = this_v[3:4]
+    n_this_v[3:4] = -this_v[2:3]
+    if np.dot(avarage_v[2:4], n_this_v[2:4]) < 0:
+        n_this_v = -n_this_v
+    return n_this_v[2:4]
 
 
 def flocking(boids: np.ndarray,
@@ -209,14 +220,14 @@ def flocking(boids: np.ndarray,
             alignment = np.zeros(2)
             cohesion = np.zeros(2)
         else:
-            # separation = compute_separation(boids, i, mask[i], perception)
+            separation = compute_separation(boids, i, mask[i], perception)
             alignment = compute_alignment(boids, i, mask[i], vrange)
-            # cohesion = compute_cohesion(boids, i, mask[i], perception)
+            cohesion = compute_cohesion(boids, i, mask[i], perception)
 
         # @todo временно:
-        separation = np.zeros(2)
+        # separation = np.zeros(2)
         # alignment = np.zeros(2)
-        cohesion = np.zeros(2)
+        # cohesion = np.zeros(2)
 
         # меняем ускорения птиц
         boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
