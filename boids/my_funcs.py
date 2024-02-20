@@ -158,6 +158,27 @@ def compute_separation(boids, id, mask, perception):
     new_pos = n * boids[id][0:2] - np.sum(boids[mask], axis=0)[0:2]  # == ((r - r1) + (r - r2) +...+ (r - rn)
     return new_pos / ((new_pos[0] ** 2 + new_pos[1] ** 2) + 1)
 
+# @todo сделать слайдер
+
+def compute_alignment(boids, id, mask, vrange):
+    """
+    steer towards the average heading of local flockmates
+
+    Parameters
+    ----------
+    boids
+    i
+    mask
+    vrange
+
+    Returns
+    -------
+
+    # """
+    avarage_velocity = boids[mask, 2:4].mean(axis=0)
+    old_velocity = boids[id, 2:4]
+    return (avarage_velocity - old_velocity)
+
 
 def flocking(boids: np.ndarray,
              perception: float,
@@ -188,14 +209,14 @@ def flocking(boids: np.ndarray,
             alignment = np.zeros(2)
             cohesion = np.zeros(2)
         else:
-            separation = compute_separation(boids, i, mask[i], perception)
-            # alignment = compute_alignment(boids, i, mask[i], vrange)
-            cohesion = compute_cohesion(boids, i, mask[i], perception)
+            # separation = compute_separation(boids, i, mask[i], perception)
+            alignment = compute_alignment(boids, i, mask[i], vrange)
+            # cohesion = compute_cohesion(boids, i, mask[i], perception)
 
         # @todo временно:
-        # separation = np.zeros(2)
-        alignment = np.zeros(2)
-        # cohesion = np.zeros(2)
+        separation = np.zeros(2)
+        # alignment = np.zeros(2)
+        cohesion = np.zeros(2)
 
         # меняем ускорения птиц
         boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
