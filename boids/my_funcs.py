@@ -197,7 +197,19 @@ def compute_walls_interations(boids, mask, field_size):
     for i in range(boids.shape[0]):
         if mask[0][i]:
             boids[i][3] = -boids[i][3]
-    boids[i][1] = field_size[1] - 0.001
+            boids[i][1] = field_size[1] - 0.001
+
+        if mask[1][i]:
+            boids[i][2] = -boids[i][2]
+            boids[i][0] = field_size[0] - 0.001
+
+        if mask[2][i]:
+            boids[i][3] = -boids[i][3]
+            boids[i][1] = 0.001
+
+        if mask[3][i]:
+            boids[i][2] = -boids[i][2]
+            boids[i][0] = 0.001
 
     # c = 1
     # x = boids[:, 0]
