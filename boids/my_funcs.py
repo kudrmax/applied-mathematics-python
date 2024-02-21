@@ -171,7 +171,7 @@ def compute_separation(boids, id, mask, dt):
 
 # @todo сделать слайдер
 
-def compute_alignment(boids, id, mask, vrange):
+def compute_alignment(boids, id, mask, dt):
     """
     steer towards the average heading of local flockmates
 
@@ -190,14 +190,11 @@ def compute_alignment(boids, id, mask, vrange):
     # old_velocity = boids[id, 2:4]
     # return (avarage_velocity - old_velocity)
 
-    avarage_v = boids[mask].mean(axis=0)
-    this_v = boids[id,].copy()
-    n_this_v = this_v.copy()
-    n_this_v[2:3] = this_v[3:4]
-    n_this_v[3:4] = -this_v[2:3]
-    if np.dot(avarage_v[2:4], n_this_v[2:4]) < 0:
-        n_this_v = -n_this_v
-    return n_this_v[2:4]
+    avarage_v = boids[mask].mean(axis=0)[2:4]
+    normal = get_normal_vec(boids[id, 2:4])
+    normal_acceleration = normal if np.dot(avarage_v, normal) > 0 else -normal  # нормальное усорение
+    delta_v = normal_acceleration * dt
+    return delta_v
 
 
 def flocking(boids: np.ndarray,
@@ -223,6 +220,7 @@ def flocking(boids: np.ndarray,
     k = 5
     mask_cohesion = (D > radius / k) * (D < radius)  # если расстояние достаточно близкое (в круге радиуса perception), то True
     mask_separation = D < radius / k  # если расстояние достаточно близкое (в круге радиуса perception), то True
+    mask_alignment = D < radius
     # walls = create_walls(boids, ratio)  # создание стен
     for i in range(N):
 
@@ -233,12 +231,12 @@ def flocking(boids: np.ndarray,
             cohesion = np.zeros(2)
         else:
             separation = compute_separation(boids, i, mask_separation[i], dt)
-            # alignment = compute_alignment(boids, i, mask[i], dt)
+            alignment = compute_alignment(boids, i, mask_alignment[i], dt)
             cohesion = compute_cohesion(boids, i, mask_cohesion[i], dt)
 
         # @todo временно:
         # separation = np.zeros(2)
-        alignment = np.zeros(2)
+        # alignment = np.zeros(2)
         # cohesion = np.zeros(2)
 
         # меняем ускорения птиц
