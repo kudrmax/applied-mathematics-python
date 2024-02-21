@@ -132,15 +132,15 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> n
     -------
     Вектор новых ускорений
     """
-    new_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]) / (1 + boids[mask].shape[0]) # радиус-вектор точки, куда мы хотим чтобы переместилась птица
-    delta_pos = new_pos - boids[id][0:2]
+    intention_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]) / (1 + boids[mask].shape[0]) # радиус-вектор точки, куда мы хотим чтобы переместилась птица
+    intention_delta_pos = intention_pos - boids[id][0:2]
     normal = get_normal_vec(boids[id][2:4]) # нормаль к вектору скорости
-    normal_acceleration = normal if np.dot(delta_pos, normal) > 0 else -normal # нормальное усорение
+    normal_acceleration = normal if np.dot(intention_delta_pos, normal) > 0 else -normal # нормальное усорение
     delta_v = normal_acceleration * dt
     return delta_v
 
 
-def compute_separation(boids, id, mask, perception):
+def compute_separation(boids, id, mask, dt):
     """
     steer to avoid crowding local flockmates
 
@@ -156,8 +156,17 @@ def compute_separation(boids, id, mask, perception):
 
     """
     n = boids[mask].shape[0]
-    new_pos = n * boids[id][0:2] - np.sum(boids[mask], axis=0)[0:2]  # == ((r - r1) + (r - r2) +...+ (r - rn)
-    return new_pos / ((new_pos[0] ** 2 + new_pos[1] ** 2) + 1)
+    temp1 = boids[id][0:2]
+    temp2 = boids[id][0:2].reshape(-1, 1)
+    temp3 = boids[mask]
+    temp4 = boids[mask][:, 0:2]
+    intention_delta_pos = np.sum((boids[id][0:2] - boids[mask][:, 0:2]) * (1 / (1 + np.linalg.norm(boids[mask][0:2]))), axis=0)
+    normal = get_normal_vec(boids[id][2:4])  # нормаль к вектору скорости
+    normal_acceleration = normal if np.dot(intention_delta_pos, normal) > 0 else -normal # нормальное усорение
+    delta_v = normal_acceleration * dt
+    return delta_v
+    # new_pos = n * boids[id][0:2] - np.sum(boids[mask], axis=0)[0:2]  # == ((r - r1) + (r - r2) +...+ (r - rn)
+    # return new_pos / ((new_pos[0] ** 2 + new_pos[1] ** 2) + 1)
 
 
 # @todo сделать слайдер
@@ -192,7 +201,7 @@ def compute_alignment(boids, id, mask, vrange):
 
 
 def flocking(boids: np.ndarray,
-             perception: float,
+             radius: float,
              coeff: np.array,
              field_size: tuple,
              vrange: tuple,
@@ -203,7 +212,7 @@ def flocking(boids: np.ndarray,
     Parameters
     ----------
     boids
-    perception
+    radius
     coeff
     field_size
     vrange
@@ -211,26 +220,28 @@ def flocking(boids: np.ndarray,
     D = distances(boids[:, 0:2])  # матрица с расстояниями между всеми птицами
     N = boids.shape[0]
     D[range(N), range(N)] = np.inf  # выкидываем расстояния между i и i
-    mask = D < perception  # если расстояние достаточно близкое (в круге радиуса perception), то True
+    k = 5
+    mask_cohesion = (D > radius / k) * (D < radius)  # если расстояние достаточно близкое (в круге радиуса perception), то True
+    mask_separation = D < radius / k  # если расстояние достаточно близкое (в круге радиуса perception), то True
     # walls = create_walls(boids, ratio)  # создание стен
     for i in range(N):
 
         # вычисляем насколько должны поменяться ускорения
-        if not np.any(mask[i]):  # если нет соседей, то ничего не менять, то есть птица как двигалась, так и движется
+        if not np.any(mask_cohesion[i]) and not np.any(mask_separation[i]):  # если нет соседей, то ничего не менять, то есть птица как двигалась, так и движется
             separation = np.zeros(2)
             alignment = np.zeros(2)
             cohesion = np.zeros(2)
         else:
-            # separation = compute_separation(boids, i, mask[i], dt)
+            separation = compute_separation(boids, i, mask_separation[i], dt)
             # alignment = compute_alignment(boids, i, mask[i], dt)
-            cohesion = compute_cohesion(boids, i, mask[i], dt)
+            cohesion = compute_cohesion(boids, i, mask_cohesion[i], dt)
 
         # @todo временно:
-        separation = np.zeros(2)
+        # separation = np.zeros(2)
         alignment = np.zeros(2)
         # cohesion = np.zeros(2)
 
         # меняем ускорения птиц
-        boids[i, 4:6] = coeff[0] * cohesion
+        boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation
         # boids[i, 4:6] =
         # boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]

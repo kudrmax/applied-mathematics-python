@@ -9,15 +9,15 @@ app.use_app('pyqt5')
 # app.use_app('pyglet')
 
 W, H = 640, 480  # размеры экрана
-N = 1000  # кол-во птиц
+N = 500  # кол-во птиц
 ratio = W / H
 w, h = ratio, 1
 field_size = (w, h)
 global delta_time
 delta_time = 0.0
 
-perseption = 1 / 20  #
-vrange = (0, 0.2)  # ограничения на скорости
+radius = field_size[0] / 10  #
+vrange = (0, 0.1)  # ограничения на скорости
 
 #                    c      a    s      w
 coeffs = np.array([1.0, 1.0, 1.0, 1.0])  # коэффициенты взаисодейлствя
@@ -40,7 +40,7 @@ def update(event):
     global delta_time
     start_time = time.time()  # начало отсчета времени
 
-    flocking(boids, perseption, coeffs, field_size, vrange, delta_time)  # пересчет ускорений (взаимодействие между птицами)
+    flocking(boids, radius, coeffs, field_size, vrange, delta_time)  # пересчет ускорений (взаимодействие между птицами)
     propagate(boids, delta_time, vrange)  # пересчет скоростей на основе ускорений
     paint_arrows(arrows, boids, delta_time)  # отрисовка стрелок
     canvas.update()  # отображение
