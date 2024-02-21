@@ -3,7 +3,19 @@ from vispy import app, scene
 
 import numpy as np
 
-# def my_rotate
+
+def get_normal_vec(vec: np.array):
+    new_vec = np.empty(2)
+    new_vec[0] = vec[1].copy()
+    new_vec[1] = -vec[0].copy()
+    return new_vec / np.linalg.norm(new_vec)
+
+
+def get_normal_acceleration(vec: np.array):
+    normal = get_normal_vec(vec)
+    if np.dot(vec, normal) < 0:
+        return -normal
+    return normal
 
 
 def paint_arrows(arrows, boids, dt):
@@ -80,8 +92,8 @@ def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     dt
     vrange
     """
-    # boids[:, 2:4] += boids[:, 4:6]
-    boids[:, 2:4] += 0.05 * dt * boids[:, 4:6]  # скорости # v = v*dt
+    boids[:, 2:4] += boids[:, 4:6]
+    # boids[:, 2:4] += 0.05 * dt * boids[:, 4:6]  # скорости # v = v*dt
     vclip(boids[:, 2:4], vrange)  # обрезаем скорости, если они вышли за vrange
     boids[:, 0:2] += dt * boids[:, 2:4]  # координаты # s = s_0 + v_0*dt + 0.5*a*dtˆ2
 
@@ -104,17 +116,13 @@ def distances(vecs: np.ndarray) -> np.ndarray:
     return norm_of_distance_difference
 
 
-def compute_cohesion(boids: np.ndarray,
-                     id: int,
-                     mask: np.array,
-                     perception: float) -> np.array:
+def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> np.array:
     """
     Steer to move towards the average position (center of mass) of local flockmates
 
-    @remove compute_separation(boids, i, mask[i], perception)
-
     Parameters
     ----------
+    dt
     boids: массив птиц
     id: индекс птицы в массиве boids
     mask: если mask[j] == True, то значит птица j взаиможействует с данной птицей id
@@ -124,21 +132,12 @@ def compute_cohesion(boids: np.ndarray,
     -------
     Вектор новых ускорений
     """
-    # brute force решение
-    # new_pos_old = boids[id][0:2]
-    # k = 1
-    # for j in range(boids.shape[0]):
-    #     if mask[j]:
-    #         new_pos_old += boids[j][0:2]
-    #         k += 1
-    # new_pos_old /= k
-
-    # нормальное решение
-    new_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]).copy()
-    new_pos /= 1 + boids[mask].shape[0]
-    old_pos = boids[id][0:2].copy()
-
-    return new_pos - old_pos
+    new_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]) / (1 + boids[mask].shape[0]) # радиус-вектор точки, куда мы хотим чтобы переместилась птица
+    delta_pos = new_pos - boids[id][0:2]
+    normal = get_normal_vec(boids[id][2:4]) # нормаль к вектору скорости
+    normal_acceleration = normal if np.dot(delta_pos, normal) > 0 else -normal # нормальное усорение
+    delta_v = normal_acceleration * dt
+    return delta_v
 
 
 def compute_separation(boids, id, mask, perception):
@@ -159,6 +158,7 @@ def compute_separation(boids, id, mask, perception):
     n = boids[mask].shape[0]
     new_pos = n * boids[id][0:2] - np.sum(boids[mask], axis=0)[0:2]  # == ((r - r1) + (r - r2) +...+ (r - rn)
     return new_pos / ((new_pos[0] ** 2 + new_pos[1] ** 2) + 1)
+
 
 # @todo сделать слайдер
 
@@ -195,7 +195,8 @@ def flocking(boids: np.ndarray,
              perception: float,
              coeff: np.array,
              field_size: tuple,
-             vrange: tuple):
+             vrange: tuple,
+             dt: float):
     """
     Функция, отвечающая за взаимодействие птиц между собой
 
@@ -220,14 +221,16 @@ def flocking(boids: np.ndarray,
             alignment = np.zeros(2)
             cohesion = np.zeros(2)
         else:
-            separation = compute_separation(boids, i, mask[i], perception)
-            alignment = compute_alignment(boids, i, mask[i], vrange)
-            cohesion = compute_cohesion(boids, i, mask[i], perception)
+            # separation = compute_separation(boids, i, mask[i], dt)
+            # alignment = compute_alignment(boids, i, mask[i], dt)
+            cohesion = compute_cohesion(boids, i, mask[i], dt)
 
         # @todo временно:
-        # separation = np.zeros(2)
-        # alignment = np.zeros(2)
+        separation = np.zeros(2)
+        alignment = np.zeros(2)
         # cohesion = np.zeros(2)
 
         # меняем ускорения птиц
-        boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
+        boids[i, 4:6] = coeff[0] * cohesion
+        # boids[i, 4:6] =
+        # boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation  # + coeff[3] * walls[i]
