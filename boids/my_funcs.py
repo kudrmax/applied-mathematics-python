@@ -3,6 +3,11 @@ from vispy import app, scene
 
 import numpy as np
 
+global maxSpeed
+global maxDeltaVelocity
+maxSpeed = 4000
+maxDeltaVelocity = 1
+
 
 def get_normal_vec(vec: np.array):
     new_vec = np.empty(2)
@@ -92,9 +97,10 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> n
     steering_pos = np.mean(boids[mask], axis=0)[0:2]
     delta_steering_pos = steering_pos - boids[id][0:2]
     delta_steering_pos = delta_steering_pos / np.linalg.norm(delta_steering_pos)
-    delta_steering_pos *= 4
+    delta_steering_pos *= maxSpeed
     delta_steering_v =  delta_steering_pos - boids[id, 2:4]
     delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+    delta_steering_v *= maxDeltaVelocity
     return delta_steering_v
     # steering_pos = np.mean(boids[mask], axis=0)[0:2]
     # steering_pos = steering_pos / np.linalg.norm(steering_pos)
@@ -112,9 +118,10 @@ def compute_separation(boids, id, mask, dt, radius):
         / (np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2]) ** 2),
         axis=0)
     steering_pos = steering_pos / np.linalg.norm(steering_pos)
-    steering_pos *= 4
+    steering_pos *= maxSpeed
     delta_steering_v = steering_pos - boids[id, 2:4]
     delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+    delta_steering_v *= maxDeltaVelocity
     return delta_steering_v
 
 
@@ -125,9 +132,10 @@ def compute_alignment(boids, id, mask, dt):
     # обычное решение
     steering_v = boids[mask].mean(axis=0)[2:4]
     steering_v = steering_v / np.linalg.norm(steering_v)
-    steering_v *= 4
+    steering_v *= maxSpeed
     delta_steering_v = steering_v - boids[id][2:4]
     delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+    delta_steering_v *= maxDeltaVelocity
     return delta_steering_v
 
     # расширение
@@ -144,22 +152,22 @@ def compute_walls_interations(boids, mask, field_size):
     for i in range(boids.shape[0]):
         if mask[0][i]:
             boids[i][3] = -boids[i][3]
-            boids[i][3] *= 200000
+            # boids[i][3] *= 200000
             boids[i][1] = field_size[1] - 0.001
 
         if mask[1][i]:
             boids[i][2] = -boids[i][2]
-            boids[i][2] *= 200000
+            # boids[i][2] *= 200000
             boids[i][0] = field_size[0] - 0.001
 
         if mask[2][i]:
             boids[i][3] = -boids[i][3]
-            boids[i][3] *= 200000
+            # boids[i][3] *= 200000
             boids[i][1] = 0.001
 
         if mask[3][i]:
             boids[i][2] = -boids[i][2]
-            boids[i][2] *= 200000
+            # boids[i][2] *= 200000
             boids[i][0] = 0.001
 
 
@@ -196,7 +204,7 @@ def flocking(boids: np.ndarray,
 
         a = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation
         noise = 0
-        # noise = get_normal_vec(boids[i, 2:4]) * np.random.uniform(-0.1, 0.1)
+        noise = get_normal_vec(boids[i, 2:4]) * np.random.uniform(-0.1, 0.1)
         boids[i, 4:6] = a + noise
 
     for mask_wall in mask_walls:
