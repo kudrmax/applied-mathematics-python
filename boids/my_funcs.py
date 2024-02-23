@@ -99,8 +99,9 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> n
     delta_steering_pos = delta_steering_pos / np.linalg.norm(delta_steering_pos)
     delta_steering_pos *= maxSpeed
     delta_steering_v =  delta_steering_pos - boids[id, 2:4]
-    delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-    delta_steering_v *= maxDeltaVelocity
+    if np.linalg.norm(delta_steering_v) > maxDeltaVelocity:
+        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+        delta_steering_v *= maxDeltaVelocity
     return delta_steering_v
     # steering_pos = np.mean(boids[mask], axis=0)[0:2]
     # steering_pos = steering_pos / np.linalg.norm(steering_pos)
@@ -120,8 +121,9 @@ def compute_separation(boids, id, mask, dt, radius):
     steering_pos = steering_pos / np.linalg.norm(steering_pos)
     steering_pos *= maxSpeed
     delta_steering_v = steering_pos - boids[id, 2:4]
-    delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-    delta_steering_v *= maxDeltaVelocity
+    if np.linalg.norm(delta_steering_v) > maxDeltaVelocity:
+        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+        delta_steering_v *= maxDeltaVelocity
     return delta_steering_v
 
 
@@ -134,8 +136,9 @@ def compute_alignment(boids, id, mask, dt):
     steering_v = steering_v / np.linalg.norm(steering_v)
     steering_v *= maxSpeed
     delta_steering_v = steering_v - boids[id][2:4]
-    delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-    delta_steering_v *= maxDeltaVelocity
+    if np.linalg.norm(delta_steering_v) > maxDeltaVelocity:
+        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+        delta_steering_v *= maxDeltaVelocity
     return delta_steering_v
 
     # расширение
@@ -183,7 +186,7 @@ def flocking(boids: np.ndarray,
     distances = compute_distances(boids[:, 0:2])  # матрица с расстояниями между всеми птицами
     N = boids.shape[0]
     distances[range(N), range(N)] = np.inf  # выкидываем расстояния между i и i
-    mask_cohesion = distances < (radius * 4) * (distances > radius / 2)
+    mask_cohesion = distances < (radius * 2) * (distances > radius / 2)
     mask_separation = distances < radius / 2
     mask_alignment = distances < radius
     mask_walls = np.array([
@@ -197,10 +200,6 @@ def flocking(boids: np.ndarray,
         separation = compute_separation(boids, i, mask_separation[i], dt, radius) if np.any(mask_separation[i]) else np.zeros(2)
         alignment = compute_alignment(boids, i, mask_alignment[i], dt) if np.any(mask_alignment[i]) else np.zeros(2)
         cohesion = compute_cohesion(boids, i, mask_cohesion[i], dt) if np.any(mask_cohesion[i]) else np.zeros(2)
-
-        # separation = 0
-        # alignment = 0
-        # cohesion = 0
 
         a = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation
         noise = 0
