@@ -5,8 +5,8 @@ import numpy as np
 
 global maxSpeed
 global maxDeltaVelocity
-maxSpeed = 4000
-maxDeltaVelocity = 1
+maxSpeed = 4
+maxDeltaVelocity = 10
 
 
 def get_normal_vec(vec: np.array):
@@ -77,7 +77,7 @@ def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     """
     boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
     vclip(boids[:, 2:4], vrange)  # обрезаем скорости, если они вышли за vrange
-    boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
+    boids[:, 0:2] += boids[:, 2:4] * dt   # меняем кооординаты: r += v * dt
 
 
 def compute_distances(vecs: np.ndarray) -> np.ndarray:
