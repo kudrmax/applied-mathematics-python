@@ -231,7 +231,7 @@ def flocking(boids: np.ndarray,
     distances[range(N), range(N)] = np.inf  # выкидываем расстояния между i и i
     k = 2  # насколько маленкий радиус отличается от большого
     # mask_cohesion = (distances > radius / k) * (distances < radius)
-    mask_cohesion = distances < radius * (distances > radius * 0.1)
+    mask_cohesion = distances < 4 * radius * (distances > radius * 0.5)
     mask_separation = distances < radius / 2
     mask_alignment = distances < radius     
     # mask_alignment = distances < radius / (2 * k)
@@ -253,7 +253,7 @@ def flocking(boids: np.ndarray,
         # alignment = 0
         # cohesion = 0
 
-        # cohesion *= 4
+        cohesion *= 4
         # alignment /= 8
         # separation /= 4
 
