@@ -23,7 +23,7 @@ vrange = (0, 0.15)  # ограничения на скорости
 # coeffs = np.array([0.2, 5.5, .3, 0.0])  # коэффициенты взаисодейлствя
 # coeffs = np.array([0.01, .41, .2, 0.0])  # коэффициенты взаисодейлствя # хорошие
 coeffs = np.array([0.05, .3, .2, 0.0])  # коэффициенты взаисодейлствя
-coeffs /= 2
+coeffs /= 1
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
 init_boids(boids, field_size, vrange=vrange)  # создаем птиц

@@ -92,6 +92,7 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> n
     steering_pos = np.mean(boids[mask], axis=0)[0:2]
     delta_steering_pos = steering_pos - boids[id][0:2]
     delta_steering_pos = delta_steering_pos / np.linalg.norm(delta_steering_pos)
+    delta_steering_pos *= 4
     delta_steering_v =  delta_steering_pos - boids[id, 2:4]
     delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
     return delta_steering_v
@@ -111,6 +112,7 @@ def compute_separation(boids, id, mask, dt, radius):
         / (np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2]) ** 2),
         axis=0)
     steering_pos = steering_pos / np.linalg.norm(steering_pos)
+    steering_pos *= 4
     delta_steering_v = steering_pos - boids[id, 2:4]
     delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
     return delta_steering_v
@@ -123,6 +125,7 @@ def compute_alignment(boids, id, mask, dt):
     # обычное решение
     steering_v = boids[mask].mean(axis=0)[2:4]
     steering_v = steering_v / np.linalg.norm(steering_v)
+    steering_v *= 4
     delta_steering_v = steering_v - boids[id][2:4]
     delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
     return delta_steering_v
