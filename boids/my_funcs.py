@@ -131,13 +131,18 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> n
     -------
     Вектор новых ускорений
     """
-    intention_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]) / (
-            1 + boids[mask].shape[0])  # радиус-вектор точки, куда мы хотим чтобы переместилась птица
-    intention_delta_pos = intention_pos - boids[id][0:2]
-    normal = get_normal_vec(boids[id][2:4])  # нормаль к вектору скорости
-    normal_acceleration = normal if np.dot(intention_delta_pos, normal) > 0 else -normal  # нормальное усорение
-    delta_v = normal_acceleration * dt
-    return delta_v
+    steering_pos = np.mean(boids[mask], axis=0)[0:2]
+    # steering_pos = boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]
+    # steering_pos = steering_pos / np.linalg.norm(steering_pos)
+    delta_steering_pos = steering_pos - boids[id][0:2]
+    steering_v = delta_steering_pos / np.linalg.norm(delta_steering_pos)
+    return steering_v * dt
+    # intention_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]) / (1 + boids[mask].shape[0])  # радиус-вектор точки, куда мы хотим чтобы переместилась птица
+    # intention_delta_pos = intention_pos - boids[id][0:2]
+    # normal = get_normal_vec(boids[id][2:4])  # нормаль к вектору скорости
+    # normal_acceleration = normal if np.dot(intention_delta_pos, normal) > 0 else -normal  # нормальное усорение
+    # delta_v = normal_acceleration * dt
+    # return delta_v
 
 
 def compute_separation(boids, id, mask, dt, radius):
@@ -155,27 +160,36 @@ def compute_separation(boids, id, mask, dt, radius):
     -------
 
     """
-    # intention_delta_pos = np.sum(
-    #     (boids[id][0:2] - boids[mask][:, 0:2])
-    #     * (1 / (1 + np.linalg.norm(boids[mask][0:2]))),
-    #     axis=0)
-    temp = boids[mask][:, 0:2] - boids[id][0:2]
-    D = np.linalg.norm(boids[mask][:, 0:2] - boids[id][0:2], axis=1)
-    # k_arr = D / radius
-    k_arr = 1 - D / radius
-    intention_delta_pos = -np.sum(
-        (boids[mask][:, 0:2] - boids[id][0:2])
-        * (1 / k_arr[:][0]),
+    steering_pos = np.sum(
+        (boids[id][0:2] - boids[mask][:, 0:2])
+        / (1 + np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2])**2),
         axis=0)
+    steering_v = steering_pos / np.linalg.norm(steering_pos)
+    return steering_v * dt
+    # # intention_delta_pos = np.sum(
+    # #     (boids[id][0:2] - boids[mask][:, 0:2])
+    # #     * (1 / (1 + np.linalg.norm(boids[mask][0:2]))),
+    # #     axis=0)
+    #
+    # temp = boids[mask][:, 0:2] - boids[id][0:2]
+    # D = np.linalg.norm(boids[mask][:, 0:2] - boids[id][0:2], axis=1)
+    # # k_arr = D / radius
+    # k_arr = 1 - D / radius
     # intention_delta_pos = -np.sum(
     #     (boids[mask][:, 0:2] - boids[id][0:2])
-    #     * (1 / np.linalg.norm(boids[mask][:, 0:2] - boids[id][0:2])),
+    #     * (1 / k_arr[:][0]),
     #     axis=0)
-    # intention_delta_pos = -np.sum(boids[mask][:, 0:2] - boids[id][0:2], axis=0)
-    normal = get_normal_vec(boids[id][2:4])  # нормаль к вектору скорости
-    normal_acceleration = normal if np.dot(intention_delta_pos, normal) > 0 else -normal  # нормальное усорение
-    delta_v = normal_acceleration * dt
-    return delta_v / 100
+    #
+    # # intention_delta_pos = -np.sum(
+    # #     (boids[mask][:, 0:2] - boids[id][0:2])
+    # #     * (1 / np.linalg.norm(boids[mask][:, 0:2] - boids[id][0:2])),
+    # #     axis=0)
+    # # intention_delta_pos = -np.sum(boids[mask][:, 0:2] - boids[id][0:2], axis=0)
+    #
+    # normal = get_normal_vec(boids[id][2:4])  # нормаль к вектору скорости
+    # normal_acceleration = normal if np.dot(intention_delta_pos, normal) > 0 else -normal  # нормальное усорение
+    # delta_v = normal_acceleration * dt
+    # return delta_v / 100
 
 
 # @todo сделать слайдер
@@ -199,11 +213,13 @@ def compute_alignment(boids, id, mask, dt):
     # old_velocity = boids[id, 2:4]
     # return (avarage_velocity - old_velocity)
 
-    avarage_v = boids[mask].mean(axis=0)[2:4]
-    normal = get_normal_vec(boids[id, 2:4])
-    normal_acceleration = normal if np.dot(avarage_v, normal) > 0 else -normal  # нормальное усорение
-    delta_v = normal_acceleration * dt
-    return delta_v
+    steering_v = boids[mask].mean(axis=0)[2:4]
+    steering_v = steering_v / np.linalg.norm(steering_v)
+    return steering_v * dt
+    # normal = get_normal_vec(boids[id, 2:4])
+    # normal_acceleration = normal if np.dot(avarage_v, normal) > 0 else -normal  # нормальное усорение
+    # delta_v = normal_acceleration * dt
+    # return delta_v
 
 
 def compute_walls_interations(boids, mask, field_size):
@@ -258,10 +274,11 @@ def flocking(boids: np.ndarray,
     N = boids.shape[0]
     distances[range(N), range(N)] = np.inf  # выкидываем расстояния между i и i
     k = 2  # насколько маленкий радиус отличается от большого
-    mask_cohesion = (distances > radius / k) * (distances < radius)
-    # mask_separation = distances < radius # / k
-    mask_separation = distances < 1 / 50 # / k
-    mask_alignment = distances < radius / (2 * k)
+    # mask_cohesion = (distances > radius / k) * (distances < radius)
+    mask_cohesion = distances < radius / 1
+    mask_separation = distances < radius / 2
+    mask_alignment = distances < radius / 2
+    # mask_alignment = distances < radius / (2 * k)
     mask_walls = np.array([
         boids[:, 1] > field_size[1],
         boids[:, 0] > field_size[0],
@@ -272,13 +289,13 @@ def flocking(boids: np.ndarray,
     compute_walls_interations(boids, mask_walls, field_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
     for i in range(N):
         # вычисляем насколько должны поменяться скорости
-        # separation = compute_separation(boids, i, mask_separation[i], dt, radius) if np.any(mask_separation[i]) else np.zeros(2)
+        separation = compute_separation(boids, i, mask_separation[i], dt, radius) if np.any(mask_separation[i]) else np.zeros(2)
         alignment = compute_alignment(boids, i, mask_alignment[i], dt) if np.any(mask_alignment[i]) else np.zeros(2)
-        # cohesion = compute_cohesion(boids, i, mask_cohesion[i], dt) if np.any(mask_cohesion[i]) else np.zeros(2)
+        cohesion = compute_cohesion(boids, i, mask_cohesion[i], dt) if np.any(mask_cohesion[i]) else np.zeros(2)
 
-        separation = 0
+        # separation = 0
         # alignment = 0
-        cohesion = 0
+        # cohesion = 0
 
         # меняем изменения скорости птиц
         boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation

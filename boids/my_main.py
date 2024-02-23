@@ -9,7 +9,7 @@ app.use_app('pyqt5')
 # app.use_app('pyglet')
 
 W, H = 640, 480  # размеры экрана
-N = 500  # кол-во птиц
+N = 1000  # кол-во птиц
 ratio = W / H
 w, h = ratio, 1
 field_size = (w, h)
@@ -20,7 +20,7 @@ radius = field_size[0] / 20  #
 vrange = (0, 0.1)  # ограничения на скорости
 
 #                    c      a    s      w
-coeffs = np.array([1.0, 10000000000000.0, 1000.0, 0.0])  # коэффициенты взаисодейлствя
+coeffs = np.array([0.25, 0.5, 0.5, 0.0])  # коэффициенты взаисодейлствя
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
 init_boids(boids, field_size, vrange=vrange)  # создаем птиц
@@ -53,6 +53,7 @@ def update(event):
     # time.sleep(0.05) # строка для проверки того, что игра FPS независимая
     end_time = time.time()  # конец отсчета времени
     delta_time = end_time - start_time
+    # delta_time = 0.01
 
 
 if __name__ == '__main__':
