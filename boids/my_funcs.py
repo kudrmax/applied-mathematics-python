@@ -158,9 +158,20 @@ def compute_alignment(boids, id, mask, dt):
     # old_velocity = boids[id, 2:4]
     # return (avarage_velocity - old_velocity)
 
+    # предыдущее норм решение
+    # steering_v = boids[mask].mean(axis=0)[2:4]
+    # steering_v = steering_v / np.linalg.norm(steering_v)
+    # return steering_v
+
+    # новое решение
     steering_v = boids[mask].mean(axis=0)[2:4]
+    avegare_pos = boids[mask].mean(axis=0)[0:2]
+    delta_pos = boids[id][0:2] - avegare_pos
+    steering_v += delta_pos * 2
     steering_v = steering_v / np.linalg.norm(steering_v)
-    return steering_v
+
+    return steering_v - boids[id][2:4]
+
     # normal = get_normal_vec(boids[id, 2:4])
     # normal_acceleration = normal if np.dot(avarage_v, normal) > 0 else -normal  # нормальное усорение
     # delta_v = normal_acceleration * dt
@@ -220,9 +231,9 @@ def flocking(boids: np.ndarray,
     distances[range(N), range(N)] = np.inf  # выкидываем расстояния между i и i
     k = 2  # насколько маленкий радиус отличается от большого
     # mask_cohesion = (distances > radius / k) * (distances < radius)
-    mask_cohesion = distances < radius / 1
+    mask_cohesion = distances < radius * (distances > radius * 0.1)
     mask_separation = distances < radius / 2
-    mask_alignment = distances < radius / 2
+    mask_alignment = distances < radius     
     # mask_alignment = distances < radius / (2 * k)
     mask_walls = np.array([
         boids[:, 1] > field_size[1],

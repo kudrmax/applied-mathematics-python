@@ -9,7 +9,7 @@ app.use_app('pyqt5')
 # app.use_app('pyglet')
 
 W, H = 640, 480  # размеры экрана
-N = 500  # кол-во птиц
+N = 1000  # кол-во птиц
 ratio = W / H
 w, h = ratio, 1
 field_size = (w, h)
@@ -20,7 +20,7 @@ radius = field_size[0] / 20  #
 vrange = (0, 0.1)  # ограничения на скорости
 
 #                    c      a    s      w
-coeffs = np.array([0.25, 0.5, 1.5, 0.0])  # коэффициенты взаисодейлствя
+coeffs = np.array([0.1, 0.5, .3, 0.0])  # коэффициенты взаисодейлствя
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
 init_boids(boids, field_size, vrange=vrange)  # создаем птиц
