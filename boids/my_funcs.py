@@ -167,6 +167,7 @@ def compute_alignment(boids, id, mask, dt):
     steering_v = boids[mask].mean(axis=0)[2:4]
     avegare_pos = boids[mask].mean(axis=0)[0:2]
     delta_pos = boids[id][0:2] - avegare_pos
+    delta_pos = 0
     steering_v += delta_pos * 2
     steering_v = steering_v / np.linalg.norm(steering_v)
 
@@ -231,7 +232,9 @@ def flocking(boids: np.ndarray,
     distances[range(N), range(N)] = np.inf  # выкидываем расстояния между i и i
     k = 2  # насколько маленкий радиус отличается от большого
     # mask_cohesion = (distances > radius / k) * (distances < radius)
-    mask_cohesion = distances < 4 * radius * (distances > radius * 0.5)
+    mask_cohesion = distances < (radius * 4) * (distances > radius / 2)
+    # mask_cohesion = distances < (4 * radius) * (distances > radius * 0.5)
+    # mask_cohesion = distances < 0
     mask_separation = distances < radius / 2
     mask_alignment = distances < radius     
     # mask_alignment = distances < radius / (2 * k)
@@ -242,24 +245,25 @@ def flocking(boids: np.ndarray,
         boids[:, 0] < 0,
     ])
     # walls = create_walls(boids, field_size[0])  # создание стен
-    compute_walls_interations(boids, mask_walls, field_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
+    # compute_walls_interations(boids, mask_walls, field_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
     for i in range(N):
         # вычисляем насколько должны поменяться скорости
         separation = compute_separation(boids, i, mask_separation[i], dt, radius) if np.any(mask_separation[i]) else np.zeros(2)
         alignment = compute_alignment(boids, i, mask_alignment[i], dt) if np.any(mask_alignment[i]) else np.zeros(2)
         cohesion = compute_cohesion(boids, i, mask_cohesion[i], dt) if np.any(mask_cohesion[i]) else np.zeros(2)
-
         # separation = 0
         # alignment = 0
-        # cohesion = 0
+        # cohesion *= 4
 
-        cohesion *= 4
         # alignment /= 8
         # separation /= 4
 
         # меняем изменения скорости птиц
-        boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation
-    for mask_wall in mask_walls:
-        for i in range(N):
-            if mask_wall[i]:
-                boids[i, 4:6] = [0.0, 0.0]
+        a = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation
+        # noise = get_normal_vec(boids[i, 2:4]) * np.random.uniform(-0.1, 0.1)
+        noise = 0
+        boids[i, 4:6] = a + noise
+    # for mask_wall in mask_walls:
+    #     for i in range(N):
+    #         if mask_wall[i]:
+    #             boids[i, 4:6] = [0.0, 0.0]
