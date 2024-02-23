@@ -20,15 +20,11 @@ radius = field_size[0] / 20  #
 vrange = (0, 0.1)  # ограничения на скорости
 
 #                    c      a    s      w
-coeffs = np.array([0.2, 5.5, .3, 0.0])  # коэффициенты взаисодейлствя
-# coeffs = np.array([0.2, 0.5, .3, 0.0])  # коэффициенты взаисодейлствя
+# coeffs = np.array([0.2, 5.5, .3, 0.0])  # коэффициенты взаисодейлствя
+coeffs = np.array([0.01, .41, .2, 0.0])  # коэффициенты взаисодейлствя
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
 init_boids(boids, field_size, vrange=vrange)  # создаем птиц
-# boids[:, 0:2] = [0.5, 0.9]
-# boids[1:, 0:2] = [0.6, 0.9]
-# boids[:, 2:4] = [0.0, vrange[1]]
-# boids[:, 4:6] = 0.0  # задаем птицам ускорения
 
 canvas = scene.SceneCanvas(show=True, size=(W, H))  # создаем сцену
 view = canvas.central_widget.add_view()
@@ -48,8 +44,6 @@ def update(event):
     propagate(boids, delta_time, vrange)  # пересчет скоростей на основе ускорений
     paint_arrows(arrows, boids, delta_time)  # отрисовка стрелок
     canvas.update()  # отображение
-
-    # print(np.max(boids[:, 1]), np.min(boids[:, 1]))
 
     # time.sleep(0.05) # строка для проверки того, что игра FPS независимая
     end_time = time.time()  # конец отсчета времени
