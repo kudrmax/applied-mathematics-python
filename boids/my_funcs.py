@@ -70,7 +70,7 @@ def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     """
     Пересчет скоростей за время dt
     """
-    boids[:, 2:4] += boids[:, 4:6]  # меняем скорости: v += dv, где dv — изменение скорости за dt
+    boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
     vclip(boids[:, 2:4], vrange)  # обрезаем скорости, если они вышли за vrange
     # boids[:, 0:2] += boids[:, 2:4]  # меняем кооординаты: r += v * dt
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
@@ -103,7 +103,7 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> n
     # steering_pos = steering_pos / np.linalg.norm(steering_pos)
     delta_steering_pos = steering_pos - boids[id][0:2]
     steering_v = delta_steering_pos / np.linalg.norm(delta_steering_pos)
-    return steering_v * dt
+    return steering_v
     # intention_pos = (boids[id][0:2] + np.sum(boids[mask], axis=0)[0:2]) / (1 + boids[mask].shape[0])  # радиус-вектор точки, куда мы хотим чтобы переместилась птица
     # intention_delta_pos = intention_pos - boids[id][0:2]
     # normal = get_normal_vec(boids[id][2:4])  # нормаль к вектору скорости
@@ -121,7 +121,7 @@ def compute_separation(boids, id, mask, dt, radius):
         / (np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2])**2),
         axis=0)
     steering_v = steering_pos / np.linalg.norm(steering_pos)
-    return steering_v * dt
+    return steering_v
     # # intention_delta_pos = np.sum(
     # #     (boids[id][0:2] - boids[mask][:, 0:2])
     # #     * (1 / (1 + np.linalg.norm(boids[mask][0:2]))),
@@ -153,25 +153,14 @@ def compute_separation(boids, id, mask, dt, radius):
 def compute_alignment(boids, id, mask, dt):
     """
     steer towards the average heading of local flockmates
-
-    Parameters
-    ----------
-    boids
-    i
-    mask
-    vrange
-
-    Returns
-    -------
-
-    # """
+    """
     # avarage_velocity = boids[mask, 2:4].mean(axis=0)
     # old_velocity = boids[id, 2:4]
     # return (avarage_velocity - old_velocity)
 
     steering_v = boids[mask].mean(axis=0)[2:4]
     steering_v = steering_v / np.linalg.norm(steering_v)
-    return steering_v * dt
+    return steering_v
     # normal = get_normal_vec(boids[id, 2:4])
     # normal_acceleration = normal if np.dot(avarage_v, normal) > 0 else -normal  # нормальное усорение
     # delta_v = normal_acceleration * dt
@@ -254,8 +243,8 @@ def flocking(boids: np.ndarray,
         # cohesion = 0
 
         # cohesion *= 4
-        alignment /= 8
-        separation /= 4
+        # alignment /= 8
+        # separation /= 4
 
         # меняем изменения скорости птиц
         boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation
