@@ -25,12 +25,6 @@ def paint_arrows(arrows, boids, dt):
 def init_boids(boids: np.ndarray, field_size: tuple, vrange: tuple = (0., 1.)):
     """
     Функция, отвечающая за создание птиц
-
-    Parameters
-    ----------
-    boids
-    ratio
-    vrange
     """
     n = boids.shape[0]
     rng = np.random.default_rng()
@@ -50,11 +44,6 @@ def directions(boids: np.ndarray, dt: float):
     """
     Функция для отрисовки векторов стрелок, т.е. для отрисовки в каком направлении движутся птицы
 
-    Parameters
-    ----------
-    boids
-    dt
-
     Returns
     -------
     Массив вида N x (x0, y0, x, y) для отрисовки векторов стрелок
@@ -68,11 +57,6 @@ def directions(boids: np.ndarray, dt: float):
 def vclip(v: np.ndarray, vrange: tuple[float, float]):
     """
     Если скорость выходит за разрешенные скорости, то мы обрезаем скорость
-
-    Parameters
-    ----------
-    v
-    vrange
     """
     norm = np.linalg.norm(v, axis=1)  # модуль скорости
     mask = norm > vrange[1]  # маска
@@ -85,25 +69,16 @@ def vclip(v: np.ndarray, vrange: tuple[float, float]):
 def propagate(boids: np.ndarray, dt: float, vrange: tuple[float, float]):
     """
     Пересчет скоростей за время dt
-
-    Parameters
-    ----------
-    boids
-    dt
-    vrange
     """
     boids[:, 2:4] += boids[:, 4:6]  # меняем скорости: v += dv, где dv — изменение скорости за dt
     vclip(boids[:, 2:4], vrange)  # обрезаем скорости, если они вышли за vrange
+    # boids[:, 0:2] += boids[:, 2:4]  # меняем кооординаты: r += v * dt
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
 
 
 def compute_distances(vecs: np.ndarray) -> np.ndarray:
     """
     Вычисляет матрицу, где в ячейке (i, j) записано расстояние между птицей i и птицей j
-
-    Parameters
-    ----------
-    vecs
 
     Returns
     -------
@@ -118,14 +93,6 @@ def compute_distances(vecs: np.ndarray) -> np.ndarray:
 def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> np.array:
     """
     Steer to move towards the average position (center of mass) of local flockmates
-
-    Parameters
-    ----------
-    dt
-    boids: массив птиц
-    id: индекс птицы в массиве boids
-    mask: если mask[j] == True, то значит птица j взаиможействует с данной птицей id
-    perception
 
     Returns
     -------
@@ -148,21 +115,10 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array, dt: float) -> n
 def compute_separation(boids, id, mask, dt, radius):
     """
     steer to avoid crowding local flockmates
-
-    Parameters
-    ----------
-    boids
-    i
-    mask
-    perception
-
-    Returns
-    -------
-
     """
     steering_pos = np.sum(
         (boids[id][0:2] - boids[mask][:, 0:2])
-        / (1 + np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2])**2),
+        / (np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2])**2),
         axis=0)
     steering_v = steering_pos / np.linalg.norm(steering_pos)
     return steering_v * dt
@@ -296,6 +252,10 @@ def flocking(boids: np.ndarray,
         # separation = 0
         # alignment = 0
         # cohesion = 0
+
+        # cohesion *= 4
+        alignment /= 8
+        separation /= 4
 
         # меняем изменения скорости птиц
         boids[i, 4:6] = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation
