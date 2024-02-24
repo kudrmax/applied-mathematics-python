@@ -12,7 +12,7 @@ W, H = 640, 480  # размеры экрана
 N = 2000  # кол-во птиц
 ratio = W / H
 w, h = ratio, 1
-field_size = (w, h)
+field_size = np.array([w, h])
 global delta_time
 delta_time = 0.0
 
