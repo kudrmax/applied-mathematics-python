@@ -9,7 +9,7 @@ app.use_app('pyqt5')
 # app.use_app('pyglet')
 
 W, H = 640, 480  # размеры экрана
-N = 2000  # кол-во птиц
+N = 100  # кол-во птиц
 ratio = W / H
 w, h = ratio, 1
 field_size = np.array([w, h])
@@ -17,13 +17,16 @@ global delta_time
 delta_time = 0.0
 
 radius = field_size[0] / 20  #
-vrange = (0, 0.1)  # ограничения на скорости
+vrange = (0, 1000.1)  # ограничения на скорости
 
 #                    c      a    s      w
 # coeffs = np.array([0.2, 5.5, .3, 0.0])  # коэффициенты взаисодейлствя
 # coeffs = np.array([0.01, .41, .2, 0.0])  # коэффициенты взаисодейлствя # хорошие
 # coeffs = np.array([0.05, .3, .2, 0.0])  # коэффициенты взаисодейлствя # хорошие 2
-coeffs = np.array([0.005, .05, .02, 0.0])  # коэффициенты взаисодейлствя
+coeffs = np.array([0.005, .05, .02, 0.0])  # коэффициенты взаисодейлствя # до numba
+# coeffs = np.array([0.5, .05, .02, 0.0])  # коэффициенты взаисодейлствя
+coeffs = np.array([.0, 100.0, 1.0, 0.0])  # коэффициенты взаисодейлствя
+coeffs = np.array([1.0, 1.0, 1.0, 0.0])  # коэффициенты взаисодейлствя
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
 init_boids(boids, field_size, vrange=vrange)  # создаем птиц
