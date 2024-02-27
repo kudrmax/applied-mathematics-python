@@ -11,28 +11,20 @@ from scipy.spatial.distance import cdist
 maxSpeed = 4
 maxDeltaVelocity = 10
 
-@njit
-def njit_norm(arr: np.array):
-    return np.sqrt(np.sum(arr**2))
 
-
-def njit_mean_ax_0(arr: np.array):
-    return np.sum(arr, axis=0) / arr.shape[0]
-
-
-@njit
-def get_normal_vec(vec: np.array):
-    new_vec = np.empty(2)
-    new_vec[0] = vec[1].copy()
-    new_vec[1] = -vec[0].copy()
-    return new_vec / np.linalg.norm(new_vec)
-
-
-def get_normal_acceleration(vec: np.array):
-    normal = get_normal_vec(vec)
-    if np.dot(vec, normal) < 0:
-        return -normal
-    return normal
+# @njit
+# def get_normal_vec(vec: np.array):
+#     new_vec = np.empty(2)
+#     new_vec[0] = vec[1].copy()
+#     new_vec[1] = -vec[0].copy()
+#     return new_vec / np.linalg.norm(new_vec)
+#
+#
+# def get_normal_acceleration(vec: np.array):
+#     normal = get_normal_vec(vec)
+#     if np.dot(vec, normal) < 0:
+#         return -normal
+#     return normal
 
 
 def paint_arrows(arrows, boids, dt):
@@ -102,6 +94,7 @@ def compute_distances(boids: np.ndarray) -> np.ndarray:
     # norm_of_distance_difference = np.linalg.norm(vector_distance_difference, axis=2)
     # return norm_of_distance_difference
 
+    # @todo переписать нормально
     p = boids[:, :2]
     n = p.shape[0]
     dist = np.empty(shape=(n, n), dtype=np.float64)
@@ -162,7 +155,6 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
         delta_steering_v *= maxDeltaVelocity
     return delta_steering_v
-
 
 
 @njit(parallel=True)

@@ -18,6 +18,7 @@ delta_time = 0.0
 
 radius = field_size[0] / 20  #
 vrange = (0, 0.1)  # ограничения на скорости
+vrange = (.2, .5)  # ограничения на скорости
 
 #                    c      a    s      w
 # coeffs = np.array([0.2, 5.5, .3, 0.0])  # коэффициенты взаисодейлствя
@@ -27,6 +28,11 @@ coeffs = np.array([0.005, .05, .02, 0.0])  # коэффициенты взаис
 # coeffs = np.array([0.5, .05, .02, 0.0])  # коэффициенты взаисодейлствя
 # coeffs = np.array([.0, 100.0, 1.0, 0.0])  # коэффициенты взаисодейлствя
 # coeffs = np.array([1.0, 1.0, 1.0, 0.0])  # коэффициенты взаисодейлствя
+
+
+coeffs = np.array([.05, .5, .5, 0.0])
+coeffs = np.array([.0, .0, .0, 0.0])
+
 
 boids = np.zeros((N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
 init_boids(boids, field_size, vrange=vrange)  # создаем птиц
