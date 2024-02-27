@@ -9,10 +9,10 @@ fraction_of_perception_radius = 1 / 20
 velocity_range = (0, .1)  # ограничения на скорости
 acceleration_range = (0, .1)  # ограничения на ускорения
 
-cohesion_range = (1, 50)
-separation_range = (1, 50)
-alignment_range = (1, 50)
-sider_step = 0.01
+slider_multiplier = 1000
+cohesion_range = (0, 0.1)
+separation_range = (0, 0.1)
+alignment_range = (0, 0.1)
 
 max_speed_magnitude = 4
 max_delta_velocity_magnitude = 10
@@ -27,3 +27,7 @@ coeffs = {
 
 size = np.array([W / H, 1])
 perception_radius = size[0] * fraction_of_perception_radius
+
+cohesion_range = (int(cohesion_range[0] * slider_multiplier), int(cohesion_range[1] * slider_multiplier))
+separation_range = (int(separation_range[0] * slider_multiplier), int(separation_range[1] * slider_multiplier))
+alignment_range = (int(alignment_range[0] * slider_multiplier), int(alignment_range[1] * slider_multiplier))

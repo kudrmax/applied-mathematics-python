@@ -73,7 +73,7 @@ def compute_distances(boids: np.ndarray) -> np.ndarray:
     dist = np.empty(shape=(n, n), dtype=np.float64)
     for i in prange(n):
         for j in range(n):
-            dist[i, j] = np.sqrt(np.sum((r[i] - r[j])**2))
+            dist[i, j] = np.sqrt(np.sum((r[i] - r[j]) ** 2))
     return dist
 
 
@@ -190,7 +190,7 @@ def flocking(boids: np.ndarray,
         # alignment = compute_alignment(boids, i, mask_alignment[i], dt) if np.any(mask_alignment[i]) else np.zeros(2)
         # cohesion = compute_cohesion(boids, i, mask_cohesion[i], dt) if np.any(mask_cohesion[i]) else np.zeros(2)
 
-        a = coeff[0] * cohesion + coeff[1] * alignment + coeff[2] * separation
+        a = coeff[0] * cohesion + coeff[1] * separation + coeff[2] * alignment
         noise = 0
         # noise = get_normal_vec(boids[i, 2:4]) * np.random.uniform(-0.1, 0.1)
         boids[i, 4:6] = a + noise

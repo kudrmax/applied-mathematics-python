@@ -87,15 +87,15 @@ class BoidsSimulation(QMainWindow):
         self.wall_bounce_checkbox.setChecked(False)
 
         self.cohesion_slider.setRange(config.cohesion_range[0], config.cohesion_range[1])
-        self.cohesion_slider.setValue(int(self.coeffs["cohesion"] * 10))
+        self.cohesion_slider.setValue(int(self.coeffs["cohesion"] * config.slider_multiplier))
         self.cohesion_slider.valueChanged.connect(self.cohesion_change)
 
         self.separation_slider.setRange(config.separation_range[0], config.separation_range[1])
-        self.separation_slider.setValue(int(self.coeffs["separation"] * 100))
+        self.separation_slider.setValue(int(self.coeffs["separation"] * config.slider_multiplier))
         self.separation_slider.valueChanged.connect(self.separation_change)
 
         self.alignment_slider.setRange(config.alignment_range[0], config.alignment_range[1])
-        self.alignment_slider.setValue(int(self.coeffs["alignment"] * 10))
+        self.alignment_slider.setValue(int(self.coeffs["alignment"] * config.slider_multiplier))
         self.alignment_slider.valueChanged.connect(self.alignment_change)
 
         layout.addWidget(self.canvas.native)
@@ -108,19 +108,23 @@ class BoidsSimulation(QMainWindow):
         layout.addWidget(self.alignment_slider)
 
     def cohesion_change(self, value):
-        self.coeffs["cohesion"] = float(value / 10)
+        value = value / config.slider_multiplier
+        self.coeffs["cohesion"] = float(value)
         self.cohesion_label.setText(f"Cohesion: {self.coeffs['cohesion']}")
-        print(f"Cohesion changed to: {value / 10}")
+        print(f"Cohesion changed to: {value}")
 
     def separation_change(self, value):
-        self.coeffs["separation"] = float(value / 100)
-        self.separation_label.setText(f"Separation: {value / 100}")
-        print(f"Separation changed to: {value / 100}")
+        value = value / config.slider_multiplier
+
+        self.coeffs["separation"] = float(value)
+        self.separation_label.setText(f"Separation: {value}")
+        print(f"Separation changed to: {value}")
 
     def alignment_change(self, value):
-        self.coeffs["alignment"] = float(value / 10)
-        self.alignment_label.setText(f"Alignment: {value / 10}")
-        print(f"Alignment changed to: {value / 10}")
+        value = value / config.slider_multiplier
+        self.coeffs["alignment"] = float(value)
+        self.alignment_label.setText(f"Alignment: {value}")
+        print(f"Alignment changed to: {value}")
 
     def wall_bounce_change(self, state):
         if state == 2:
@@ -147,4 +151,5 @@ if __name__ == '__main__':
     app.create()
     simulation_window = BoidsSimulation()
     simulation_window.show()
+    simulation_window.canvas.measure_fps()
     app.run()
