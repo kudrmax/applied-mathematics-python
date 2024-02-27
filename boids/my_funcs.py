@@ -133,6 +133,11 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     return delta_steering_v
 
 
+@njit
+def compute_noise(boid: np.array):
+    return get_normal_vec(boid[2:4]) * np.random.uniform(-0.1, 0.1)
+
+
 @njit(parallel=True)
 def compute_walls_interations(boids: np.ndarray, mask: np.ndarray, screen_size: np.array):
     for i in prange(boids.shape[0]):
@@ -156,6 +161,11 @@ def compute_walls_interations(boids: np.ndarray, mask: np.ndarray, screen_size: 
             # boids[i][2] *= 200000
             boids[i][0] = 0.001
 
+    for mask_wall in mask:
+        for i in prange(boids.shape[0]):
+            if mask_wall[i]:
+                boids[i, 4:6] = np.zeros(2)
+
 
 @njit(parallel=True)
 def flocking(boids: np.ndarray,
@@ -165,11 +175,13 @@ def flocking(boids: np.ndarray,
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
+    # считаем расстояния
     distances = compute_distances(boids)  # матрица с расстояниями между всеми птицами
     N = boids.shape[0]
-    for i in range(N):
-        distances[i, i] = np.inf  # выкидываем расстояния между i и i
+    for i in prange(N):  # выкидываем расстояния между i и i
+        distances[i, i] = np.inf
 
+    # считаем маски
     mask_cohesion = distances < (perception_radius * 2) * (distances > perception_radius / 2)
     mask_separation = distances < perception_radius / 2
     mask_alignment = distances < perception_radius
@@ -179,8 +191,8 @@ def flocking(boids: np.ndarray,
     mask_walls[1] = boids[:, 0] > screen_size[0]
     mask_walls[2] = boids[:, 1] < 0
     mask_walls[3] = boids[:, 0] < 0
-    compute_walls_interations(boids, mask_walls, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
 
+    # вычисляем взаимодействие между птицами
     for i in prange(N):
         cohesion = np.zeros(2)
         separation = np.zeros(2)
@@ -192,13 +204,13 @@ def flocking(boids: np.ndarray,
             separation = compute_separation(boids, i, mask_separation[i])
         if np.any(mask_alignment[i]):
             alignment = compute_alignment(boids, i, mask_alignment[i])
+        noise = compute_noise(boids[i])
 
-        a = coeff[0] * cohesion + coeff[1] * separation + coeff[2] * alignment
-        noise = get_normal_vec(boids[i, 2:4]) * np.random.uniform(-0.1, 0.1)
-        a += noise
-        boids[i, 4:6] = a
+        boids[i, 4:6] = \
+            coeff[0] * cohesion + \
+            coeff[1] * separation + \
+            coeff[2] * alignment + \
+            noise
 
-    for mask_wall in mask_walls:
-        for i in range(N):
-            if mask_wall[i]:
-                boids[i, 4:6] = np.zeros(2)
+    # коллизия
+    compute_walls_interations(boids, mask_walls, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
