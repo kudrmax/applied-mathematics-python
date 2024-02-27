@@ -1,18 +1,16 @@
-import numpy as np
 from vispy import app, scene
 from vispy.geometry import Rect
 import time
 from my_funcs import *
 import config as config
 
-app.use_app('pyqt5')
+app.use_app('pyqt6')
 
 global delta_time
 delta_time = 0.0
 coeffs = np.array([config.coeffs["cohesion"], config.coeffs["separation"], config.coeffs["alignment"]])
 
-boids = np.zeros((config.N, 6),
-                 dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
+boids = np.zeros((config.N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
 init_boids(boids, config.size, velocity_range=config.velocity_range)  # создаем птиц
 
 canvas = scene.SceneCanvas(show=True, size=(config.W, config.H))  # создаем сцену
