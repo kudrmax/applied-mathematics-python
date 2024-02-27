@@ -3,6 +3,13 @@ import numpy as np
 import config as config
 
 
+@njit
+def get_normal_vec(vec: np.array) -> np.array:
+    vec_rotated = np.array([vec[1], -vec[0]])
+    vec_rotated /= np.linalg.norm(vec_rotated)
+    return vec_rotated
+
+
 def paint_arrows(arrows, boids, dt):
     arrows.set_data(arrows=directions(boids, dt))  # отрисовка стрелок
 
@@ -186,14 +193,10 @@ def flocking(boids: np.ndarray,
         if np.any(mask_alignment[i]):
             alignment = compute_alignment(boids, i, mask_alignment[i])
 
-        # separation = compute_separation(boids, i, mask_separation[i], dt, perception_radius) if np.any(mask_separation[i]) else np.zeros(2)
-        # alignment = compute_alignment(boids, i, mask_alignment[i], dt) if np.any(mask_alignment[i]) else np.zeros(2)
-        # cohesion = compute_cohesion(boids, i, mask_cohesion[i], dt) if np.any(mask_cohesion[i]) else np.zeros(2)
-
         a = coeff[0] * cohesion + coeff[1] * separation + coeff[2] * alignment
-        noise = 0
-        # noise = get_normal_vec(boids[i, 2:4]) * np.random.uniform(-0.1, 0.1)
-        boids[i, 4:6] = a + noise
+        noise = get_normal_vec(boids[i, 2:4]) * np.random.uniform(-0.1, 0.1)
+        a += noise
+        boids[i, 4:6] = a
 
     for mask_wall in mask_walls:
         for i in range(N):
