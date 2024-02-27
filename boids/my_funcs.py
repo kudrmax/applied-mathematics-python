@@ -95,15 +95,12 @@ def compute_distances(boids: np.ndarray) -> np.ndarray:
     # return norm_of_distance_difference
 
     # @todo переписать нормально
-    p = boids[:, :2]
-    n = p.shape[0]
+    r = boids[:, :2]
+    n = r.shape[0]
     dist = np.empty(shape=(n, n), dtype=np.float64)
     for i in prange(n):
         for j in range(n):
-            v = p[i] - p[j]
-            d = np.sqrt(np.sum(v * v))
-            dist[i, j] = d
-    dist = np.sqrt(dist)
+            dist[i, j] = np.sqrt(np.sum((r[i] - r[j])**2))
     return dist
 
 
@@ -133,6 +130,9 @@ def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array
         (boids[id][0:2] - boids[mask][:, 0:2])
         / (np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2]) ** 2),
         axis=0)
+    # steering_pos = np.sum(
+    #     (boids[id][0:2] - boids[mask][:, 0:2]),
+    #     axis=0)
     steering_pos /= np.linalg.norm(steering_pos)
     steering_pos *= maxSpeed
     delta_steering_v = steering_pos - boids[id, 2:4]
