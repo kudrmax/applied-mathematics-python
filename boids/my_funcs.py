@@ -178,19 +178,19 @@ def flocking(boids: np.ndarray,
     # считаем расстояния
     distances = compute_distances(boids)  # матрица с расстояниями между всеми птицами
     N = boids.shape[0]
-    for i in prange(N):  # выкидываем расстояния между i и i
-        distances[i, i] = np.inf
+    # for i in prange(N):  # выкидываем расстояния между i и i
+    #     distances[i, i] = np.inf
 
     # считаем маски
-    mask_cohesion = distances < (perception_radius * 2) * (distances > perception_radius / 2)
-    mask_separation = distances < perception_radius / 2
-    mask_alignment = distances < perception_radius
+    # mask_cohesion = distances < (perception_radius * 2) * (distances > perception_radius / 2)
+    # mask_separation = distances < perception_radius / 2
+    # mask_alignment = distances < perception_radius
 
-    mask_walls = np.empty((4, boids.shape[0]))
-    mask_walls[0] = boids[:, 1] > screen_size[1]
-    mask_walls[1] = boids[:, 0] > screen_size[0]
-    mask_walls[2] = boids[:, 1] < 0
-    mask_walls[3] = boids[:, 0] < 0
+    # mask_walls = np.empty((4, boids.shape[0]))
+    # mask_walls[0] = boids[:, 1] > screen_size[1]
+    # mask_walls[1] = boids[:, 0] > screen_size[0]
+    # mask_walls[2] = boids[:, 1] < 0
+    # mask_walls[3] = boids[:, 0] < 0
 
     # вычисляем взаимодействие между птицами
     for i in prange(N):
@@ -198,12 +198,12 @@ def flocking(boids: np.ndarray,
         separation = np.zeros(2)
         alignment = np.zeros(2)
 
-        if np.any(mask_cohesion[i]):
-            cohesion = compute_cohesion(boids, i, mask_cohesion[i])
-        if np.any(mask_separation[i]):
-            separation = compute_separation(boids, i, mask_separation[i])
-        if np.any(mask_alignment[i]):
-            alignment = compute_alignment(boids, i, mask_alignment[i])
+        # if np.any(mask_cohesion[i]):
+        #     cohesion = compute_cohesion(boids, i, mask_cohesion[i])
+        # if np.any(mask_separation[i]):
+        #     separation = compute_separation(boids, i, mask_separation[i])
+        # if np.any(mask_alignment[i]):
+        #     alignment = compute_alignment(boids, i, mask_alignment[i])
         noise = compute_noise(boids[i])
 
         boids[i, 4:6] = \
@@ -213,4 +213,4 @@ def flocking(boids: np.ndarray,
             noise
 
     # коллизия
-    compute_walls_interations(boids, mask_walls, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
+    # compute_walls_interations(boids, mask_walls, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)

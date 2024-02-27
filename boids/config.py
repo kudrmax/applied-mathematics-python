@@ -2,8 +2,8 @@ import numpy as np
 
 # настраиваемые
 
-W, H = 640, 480  # размеры экрана
-N = 2000  # кол-во птиц
+W, H = 1920 * 2, 1080 * 2  # размеры экрана
+N = 5000  # кол-во птиц
 fraction_of_perception_radius = 1 / 20
 
 velocity_range = (0, .1)  # ограничения на скорости
@@ -23,7 +23,7 @@ coeffs = {
     'alignment': .02,
 }
 
-# ненастраиваемые
+# внутренние расчеты
 
 size = np.array([W / H, 1])
 perception_radius = size[0] * fraction_of_perception_radius
