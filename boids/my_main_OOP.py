@@ -86,7 +86,7 @@ class BoidsSimulation(QMainWindow):
         self.alignment_slider = QSlider(Qt.Orientation.Horizontal)
 
         self.perception_radius_label = QLabel(self)
-        self.perception_radius_label.setText(f"Perception radius: {self.perception_radius}")
+        self.perception_radius_label.setText(f"Perception radius: 1 / {int(1 / self.perception_radius)}")
         self.perception_radius_slider = QSlider(Qt.Orientation.Horizontal)
 
         # self.wall_bounce_checkbox = QCheckBox("Wall bounce", self)
@@ -96,19 +96,19 @@ class BoidsSimulation(QMainWindow):
         # изменить переменные, за которые отвечают слайдеры
 
         self.cohesion_slider.setRange(config.cohesion_range[0], config.cohesion_range[1])
-        self.cohesion_slider.setValue(int(self.coeffs["cohesion"] * config.slider_multiplier))
+        # self.cohesion_slider.setValue(int(self.coeffs["cohesion"] * config.slider_multiplier))
         self.cohesion_slider.valueChanged.connect(self.cohesion_change)
 
         self.separation_slider.setRange(config.separation_range[0], config.separation_range[1])
-        self.separation_slider.setValue(int(self.coeffs["separation"] * config.slider_multiplier))
+        # self.separation_slider.setValue(int(self.coeffs["separation"] * config.slider_multiplier))
         self.separation_slider.valueChanged.connect(self.separation_change)
 
         self.alignment_slider.setRange(config.alignment_range[0], config.alignment_range[1])
-        self.alignment_slider.setValue(int(self.coeffs["alignment"] * config.slider_multiplier))
+        # self.alignment_slider.setValue(int(self.coeffs["alignment"] * config.slider_multiplier))
         self.alignment_slider.valueChanged.connect(self.alignment_change)
 
         self.perception_radius_slider.setRange(config.perception_radius_range[0], config.perception_radius_range[1])
-        self.perception_radius_slider.setValue(int(self.perception_radius * config.slider_multiplier))
+        # self.perception_radius_slider.setValue(self.perception_radius)
         self.perception_radius_slider.valueChanged.connect(self.perception_radius_change)
 
         # установка в layout
@@ -146,10 +146,10 @@ class BoidsSimulation(QMainWindow):
         print(f"Alignment changed to: {value}")
 
     def perception_radius_change(self, value):
-        value = value / config.slider_multiplier
-        self.perception_radius = value
-        self.perception_radius_label.setText(f"Perception radius: 1 / {self.perception_radius}")
-        print(f"Perception radius changed to: 1 / {self.perception_radius}")
+        # value = value / config.slider_multiplier
+        self.perception_radius = 1 / value
+        self.perception_radius_label.setText(f"Perception radius: 1 / {int(1 / self.perception_radius)}")
+        print(f"Perception radius changed to: 1 / {int(1 / self.perception_radius)}")
 
     # def wall_bounce_change(self, state):
     #     if state == 2:
@@ -167,6 +167,7 @@ class BoidsSimulation(QMainWindow):
         paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
         self.canvas.update()  # отображение
 
+        print(f"{self.perception_radius = }")
         # time.sleep(0.05) # строка для проверки того, что игра FPS независимая
         end_time = time.time()  # конец отсчета времени
         self.delta_time = end_time - start_time
