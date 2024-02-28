@@ -65,6 +65,21 @@ def propagate(boids: np.ndarray, dt: float, velocity_range: tuple[float, float])
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
 
 
+@njit
+def njit_norm_axis1(vector: np.ndarray):
+    norm = np.zeros(vector.shape[0], dtype=np.float64)
+    for j in prange(vector.shape[0]):
+        norm[j] = np.sqrt(vector[j, 0] * vector[j, 0] + vector[j, 1] * vector[j, 1])
+    return norm
+
+
+@njit
+def njit_norm_vector(vector: np.ndarray):
+    norm = 0
+    for j in prange(vector.shape[0]):
+        norm += vector[j] * vector[j]
+    return np.sqrt(norm)
+
 @njit(parallel=True)
 def compute_distances(boids: np.ndarray) -> np.ndarray:
     """

@@ -1,5 +1,5 @@
 import time
-from my_funcs import *
+from nikitas_funcs import *
 import config as config
 
 from vispy import app, scene
@@ -44,7 +44,7 @@ class BoidsSimulation(QMainWindow):
         # boids
         self.boids = np.zeros((self.N, 6),
                               dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
-        init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
+        init_boids(self.boids, self.size[0], self.velocity_range)  # создаем птиц
 
         # canvas
         self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H))  # создаем сцену
@@ -137,7 +137,7 @@ class BoidsSimulation(QMainWindow):
         start_time = time.time()  # начало отсчета времени
         coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
         flocking(self.boids, config.perception_radius, coeffs_for_numba,
-                 config.size)  # пересчет ускорений (взаимодействие между птицами)
+                 config.size[0], self.velocity_range)  # пересчет ускорений (взаимодействие между птицами)
         propagate(self.boids, self.delta_time, config.velocity_range)  # пересчет скоростей на основе ускорений
         paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
         self.canvas.update()  # отображение
