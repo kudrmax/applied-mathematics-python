@@ -111,32 +111,32 @@ def distance(boids: np.ndarray, i: int):
     return njit_norm_axis1(difference)
 
 # @todo сравнить c distance для вектора, а не матрицы
-# @njit(parallel=True)
-# def compute_distances(boids: np.ndarray) -> np.ndarray:
-#     """
-#     Вычисляет матрицу, где в ячейке (i, j) записано расстояние между птицей i и птицей j
-#     """
-#     # n, m = boids.shape
-#     # vector_distance_difference = boids.reshape((n, 1, m)) - boids.reshape((1, n, m))
-#     # norm_of_distance_difference = np.linalg.norm(vector_distance_difference, axis=2)
-#     # return norm_of_distance_difference
-#
-#     r = boids[:, :2]
-#     n = r.shape[0]
-#     dist = np.empty(shape=(n, n), dtype=np.float64)
-#     for i in prange(n):
-#         dr_arr = boids[i, 0:2] - boids[:, 0:2]
-#         dist[i] = njit_norm_axis1(dr_arr)
-#         # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
-#
-#         # dist[i] = np.sqrt((boids[i, 0:2] - boids[:, 0:2])[:, 0] ** 2 + (boids[i, 0:2] - boids[:, 0:2])[:, 1] ** 2)
-#         # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
-#         # dr_arr = boids[i, 0:2] - boids[:, 0:2]
-#         # norm = np.empty(n, dtype=np.float64)
-#         # for j in prange(n):
-#         #     norm[j] = np.sqrt(dr_arr[j, 0] ** 2 + dr_arr[j, 1] ** 2)
-#         # dist[i] = norm
-#     return dist
+@njit(parallel=True)
+def compute_distances(boids: np.ndarray) -> np.ndarray:
+    """
+    Вычисляет матрицу, где в ячейке (i, j) записано расстояние между птицей i и птицей j
+    """
+    # n, m = boids.shape
+    # vector_distance_difference = boids.reshape((n, 1, m)) - boids.reshape((1, n, m))
+    # norm_of_distance_difference = np.linalg.norm(vector_distance_difference, axis=2)
+    # return norm_of_distance_difference
+
+    r = boids[:, :2]
+    n = r.shape[0]
+    dist = np.empty(shape=(n, n), dtype=np.float64)
+    for i in prange(n):
+        dr_arr = boids[i, 0:2] - boids[:, 0:2]
+        dist[i] = njit_norm_axis1(dr_arr)
+        # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
+
+        # dist[i] = np.sqrt((boids[i, 0:2] - boids[:, 0:2])[:, 0] ** 2 + (boids[i, 0:2] - boids[:, 0:2])[:, 1] ** 2)
+        # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
+        # dr_arr = boids[i, 0:2] - boids[:, 0:2]
+        # norm = np.empty(n, dtype=np.float64)
+        # for j in prange(n):
+        #     norm[j] = np.sqrt(dr_arr[j, 0] ** 2 + dr_arr[j, 1] ** 2)
+        # dist[i] = norm
+    return dist
 
 
 # @todo сравнить + мб добавить numba?
@@ -253,101 +253,112 @@ def alignment(boids: np.ndarray, i: int, distance_mask: np.ndarray):
     return acceleration - boids[i, 2:4]
 
 
-@njit
-def compute_walls_interations(boids: np.ndarray, i: int, aspect_ratio: float):
-    # mask_walls = np.empty(4)
-    # mask_walls[0] = boids[i, 1] > 1
-    # mask_walls[1] = boids[i, 0] > aspect_ratio
-    # mask_walls[2] = boids[i, 1] < 0
-    # mask_walls[3] = boids[i, 0] < 0
-    #
-    # if mask_walls[0]:
-    #     boids[i, 1] = 0
-    # if mask_walls[1]:
-    #     boids[i, 0] = 0
-    # if mask_walls[2]:
-    #     boids[i, 1] = 1
-    # if mask_walls[3]:
-    #     boids[i, 0] = aspect_ratio
-    mask_walls = np.empty(4)
-    mask_walls[0] = boids[i, 1] > 1
-    mask_walls[1] = boids[i, 0] > aspect_ratio
-    mask_walls[2] = boids[i, 1] < 0
-    mask_walls[3] = boids[i, 0] < 0
-
-    if mask_walls[0]:
-        boids[i, 3] = -boids[i, 3]
-        boids[i][1] = 1 - 0.001
-
-    if mask_walls[1]:
-        boids[i, 2] = -boids[i, 2]
-        boids[i, 0] = aspect_ratio - 0.001
-
-    if mask_walls[2]:
-        boids[i, 3] = -boids[i, 3]
-        boids[i, 1] = 0.001
-
-    if mask_walls[3]:
-        boids[i, 2] = -boids[i, 2]
-        boids[i, 0] = 0.001
-
-# @njit(parallel=True)
-# def compute_walls_interations(boids: np.ndarray, mask: np.ndarray, screen_size: np.array):
-#     for i in prange(boids.shape[0]):
-#         if mask[0][i]:
-#             boids[i][3] = -boids[i][3]
-#             # boids[i][3] *= 200000
-#             boids[i][1] = screen_size[1] - 0.001
+# @njit
+# def compute_walls_interations(boids: np.ndarray, i: int, aspect_ratio: float):
+#     # mask_walls = np.empty(4)
+#     # mask_walls[0] = boids[i, 1] > 1
+#     # mask_walls[1] = boids[i, 0] > aspect_ratio
+#     # mask_walls[2] = boids[i, 1] < 0
+#     # mask_walls[3] = boids[i, 0] < 0
+#     #
+#     # if mask_walls[0]:
+#     #     boids[i, 1] = 0
+#     # if mask_walls[1]:
+#     #     boids[i, 0] = 0
+#     # if mask_walls[2]:
+#     #     boids[i, 1] = 1
+#     # if mask_walls[3]:
+#     #     boids[i, 0] = aspect_ratio
+#     mask_walls = np.empty(4)
+#     mask_walls[0] = boids[i, 1] > 1
+#     mask_walls[1] = boids[i, 0] > aspect_ratio
+#     mask_walls[2] = boids[i, 1] < 0
+#     mask_walls[3] = boids[i, 0] < 0
 #
-#         if mask[1][i]:
-#             boids[i][2] = -boids[i][2]
-#             # boids[i][2] *= 200000
-#             boids[i][0] = screen_size[0] - 0.001
+#     if mask_walls[0]:
+#         boids[i, 3] = -boids[i, 3]
+#         boids[i][1] = 1 - 0.001
 #
-#         if mask[2][i]:
-#             boids[i][3] = -boids[i][3]
-#             # boids[i][3] *= 200000
-#             boids[i][1] = 0.001
+#     if mask_walls[1]:
+#         boids[i, 2] = -boids[i, 2]
+#         boids[i, 0] = aspect_ratio - 0.001
 #
-#         if mask[3][i]:
-#             boids[i][2] = -boids[i][2]
-#             # boids[i][2] *= 200000
-#             boids[i][0] = 0.001
+#     if mask_walls[2]:
+#         boids[i, 3] = -boids[i, 3]
+#         boids[i, 1] = 0.001
 #
-#     for mask_wall in mask:
-#         for i in prange(boids.shape[0]):
-#             if mask_wall[i]:
-#                 boids[i, 4:6] = np.zeros(2)
+#     if mask_walls[3]:
+#         boids[i, 2] = -boids[i, 2]
+#         boids[i, 0] = 0.001
+
+@njit(parallel=True)
+def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
+    mask_walls = np.empty((4, boids.shape[0]))
+    mask_walls[0] = boids[:, 1] > screen_size[1]
+    mask_walls[1] = boids[:, 0] > screen_size[0]
+    mask_walls[2] = boids[:, 1] < 0
+    mask_walls[3] = boids[:, 0] < 0
+
+    for i in prange(boids.shape[0]):
+        if mask_walls[0][i]:
+            boids[i][3] = -boids[i][3]
+            # boids[i][3] *= 200000
+            boids[i][1] = screen_size[1] - 0.001
+
+        if mask_walls[1][i]:
+            boids[i][2] = -boids[i][2]
+            # boids[i][2] *= 200000
+            boids[i][0] = screen_size[0] - 0.001
+
+        if mask_walls[2][i]:
+            boids[i][3] = -boids[i][3]
+            # boids[i][3] *= 200000
+            boids[i][1] = 0.001
+
+        if mask_walls[3][i]:
+            boids[i][2] = -boids[i][2]
+            # boids[i][2] *= 200000
+            boids[i][0] = 0.001
+
+    for mask_wall in mask_walls:
+        for i in prange(boids.shape[0]):
+            if mask_wall[i]:
+                boids[i, 4:6] = np.zeros(2)
 
 
 @njit(parallel=True)
-def flocking(boids: np.ndarray, perseption: float, coeffitients: np.ndarray, aspect_ratio: float,
-             a_range: np.ndarray):
+def flocking(boids: np.ndarray,
+             perception_radius: float,
+             coeff: np.array,
+             screen_size: np.array):
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
+    # distances = compute_distances(boids)  # матрица с расстояниями между всеми птицами
 
-    a_separation = np.zeros(2)
-    a_cohesion = np.zeros(2)
-    a_alignment = np.zeros(2)
     for i in prange(boids.shape[0]):
+
+        a_separation = np.zeros(2)
+        a_cohesion = np.zeros(2)
+        a_alignment = np.zeros(2)
+
         d = distance(boids, i)
-        perception_mask = d < perseption
-        separation_mask = d < perseption / 2
+        # d = distances[i]
+
+        perception_mask = d < perception_radius
+        separation_mask = d < perception_radius / 2
         separation_mask[i] = False
         cohesion_mask = np.logical_xor(perception_mask, separation_mask)
 
-        compute_walls_interations(boids, i, aspect_ratio)
-
         if np.any(perception_mask):
             if np.any(separation_mask):
-                # a_separation = separation(boids, i, separation_mask)
-                a_separation = compute_separation(boids, i, separation_mask)
+                a_separation = separation(boids, i, separation_mask)
+                # a_separation = compute_separation(boids, i, separation_mask)
             if np.any(cohesion_mask):
-                # a_cohesion = cohesion(boids, i, cohesion_mask)
-                a_cohesion = compute_cohesion(boids, i, cohesion_mask)
-            # a_alignment = alignment(boids, i, perception_mask)
-            a_alignment = compute_alignment(boids, i, perception_mask)
+                a_cohesion = cohesion(boids, i, cohesion_mask)
+                # a_cohesion = compute_cohesion(boids, i, cohesion_mask)
+            a_alignment = alignment(boids, i, perception_mask)
+            # a_alignment = compute_alignment(boids, i, perception_mask)
 
         # if np.any(perception_mask):
         #     if np.any(separation_mask):
@@ -356,10 +367,14 @@ def flocking(boids: np.ndarray, perseption: float, coeffitients: np.ndarray, asp
         #     #     a_cohesion = cohesion(boids, i, cohesion_mask)
         #     # a_alignment = compute_alignment(boids, i, perception_mask)
 
-        acceleration = coeffitients[0] * a_cohesion \
-                       + coeffitients[1] * a_separation \
-                       + coeffitients[2] * a_alignment
+        acceleration = coeff[0] * a_cohesion \
+                       + coeff[1] * a_separation \
+                       + coeff[2] * a_alignment
         boids[i, 4:6] = acceleration
+
+    # коллизия
+    compute_walls_interations(boids, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
+
 
 
 def propagate(boids: np.ndarray, dt: float, velocity_range: tuple[float, float]):
