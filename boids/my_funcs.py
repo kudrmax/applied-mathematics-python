@@ -99,8 +99,6 @@ def compute_distances(boids: np.ndarray) -> np.ndarray:
         dist[i] = njit_norm_axis1(dr_arr)
         # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
 
-
-
         # dist[i] = np.sqrt((boids[i, 0:2] - boids[:, 0:2])[:, 0] ** 2 + (boids[i, 0:2] - boids[:, 0:2])[:, 1] ** 2)
         # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
         # dr_arr = boids[i, 0:2] - boids[:, 0:2]
@@ -110,9 +108,11 @@ def compute_distances(boids: np.ndarray) -> np.ndarray:
         # dist[i] = norm
     return dist
 
+
 @njit
 def my_norm_1d(arr: np.array) -> np.ndarray:
     return np.sqrt(arr[0] ** 2 + arr[1] ** 2)
+
 
 @njit
 def njit_norm_vector(vector: np.ndarray):
@@ -120,6 +120,7 @@ def njit_norm_vector(vector: np.ndarray):
     for j in prange(vector.shape[0]):
         norm += vector[j] * vector[j]
     return np.sqrt(norm)
+
 
 @njit
 def compute_separation(boids: np.ndarray, i: int, distance_mask: np.ndarray):
@@ -144,6 +145,7 @@ def compute_cohesion(boids: np.ndarray, i: int, distance_mask: np.ndarray):
     acceleration = np.sum(directions, axis=0)
     acceleration /= directions.shape[0]
     return acceleration - boids[i, 2:4]
+
 
 # @njit
 # def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:

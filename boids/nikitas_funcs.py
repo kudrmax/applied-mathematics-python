@@ -5,7 +5,9 @@ from numba import njit, prange
 def paint_arrows(arrows, boids, dt):
     arrows.set_data(arrows=directions(boids, dt))  # отрисовка стрелок
 
-def init_boids(boids: np.ndarray, asp: float, vrange: tuple[float, float]):
+
+def init_boids(boids: np.ndarray, asp0: tuple, vrange: tuple[float, float]):
+    asp = asp0[0]
     n = boids.shape[0]
     random = np.random.default_rng()
     boids[:, 0] = random.uniform(0., asp, size=n)
@@ -176,10 +178,10 @@ def flocking(boids: np.ndarray, perseption: float, coeffitients: np.ndarray, asp
             # a_separation = clip_vector(a_separation, a_range)
             # a_cohesion = clip_vector(a_cohesion, a_range)
 
-        acceleration = coeffitients[0] * a_separation \
-                       + coeffitients[1] * a_cohesion \
+        acceleration = coeffitients[0] * a_cohesion \
+                       + coeffitients[1] * a_separation \
                        + coeffitients[2] * a_alignment
-        boids[i, 4:6] = acceleration * 1000
+        boids[i, 4:6] = acceleration
 
 
 
