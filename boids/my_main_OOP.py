@@ -16,13 +16,18 @@ class BoidsSimulation(QMainWindow):
         super().__init__()
 
         # слайдеры
-        self.wall_bounce_checkbox = None
-        self.alignment_label = None
-        self.separation_label = None
+
+        # self.wall_bounce_checkbox = None
+
         self.cohesion_slider = None
         self.separation_slider = None
         self.alignment_slider = None
+        self.perception_radius_slider = None
+
+        self.separation_label = None
+        self.alignment_label = None
         self.cohesion_label = None
+        self.perception_radius_label = None
 
         #
         self.central_widget = QWidget(self)
@@ -35,15 +40,14 @@ class BoidsSimulation(QMainWindow):
         self.W, self.H = config.W, config.H  # размеры экрана
         self.N = config.N  # кол-во птиц
         self.size = config.size
-        self.fraction_of_perception_radius = config.fraction_of_perception_radius
+        self.perception_radius = config.perception_radius
         self.velocity_range = config.velocity_range
         self.acceleration_range = config.acceleration_range
         self.max_speed_magnitude = config.max_speed_magnitude
         self.max_delta_velocity_magnitude = config.max_delta_velocity_magnitude
 
         # boids
-        self.boids = np.zeros((self.N, 6),
-                              dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
+        self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
 
         # canvas
@@ -66,6 +70,9 @@ class BoidsSimulation(QMainWindow):
         self.timer.start()
 
     def create_sliders(self, layout, width, height):
+
+        # отобразить инфо на слайдерах
+
         self.cohesion_label = QLabel(self)
         self.cohesion_label.setText(f"Cohesion: {self.coeffs['cohesion']}")
         self.cohesion_slider = QSlider(Qt.Orientation.Horizontal)
@@ -78,13 +85,15 @@ class BoidsSimulation(QMainWindow):
         self.alignment_label.setText(f"Alignment: {self.coeffs['alignment']}")
         self.alignment_slider = QSlider(Qt.Orientation.Horizontal)
 
-        self.cohesion_slider.setGeometry(50, 0, int(width * 0.7), 30)
-        self.separation_slider.setGeometry(50, 40, int(width * 0.7), 30)
-        self.alignment_slider.setGeometry(50, 80, int(width * 0.7), 30)
+        self.perception_radius_label = QLabel(self)
+        self.perception_radius_label.setText(f"Perception radius: {self.perception_radius}")
+        self.perception_radius_slider = QSlider(Qt.Orientation.Horizontal)
 
-        self.wall_bounce_checkbox = QCheckBox("Wall bounce", self)
-        self.wall_bounce_checkbox.stateChanged.connect(self.wall_bounce_change)
-        self.wall_bounce_checkbox.setChecked(False)
+        # self.wall_bounce_checkbox = QCheckBox("Wall bounce", self)
+        # self.wall_bounce_checkbox.stateChanged.connect(self.wall_bounce_change)
+        # self.wall_bounce_checkbox.setChecked(False)
+
+        # изменить переменные, за которые отвечают слайдеры
 
         self.cohesion_slider.setRange(config.cohesion_range[0], config.cohesion_range[1])
         self.cohesion_slider.setValue(int(self.coeffs["cohesion"] * config.slider_multiplier))
@@ -98,14 +107,25 @@ class BoidsSimulation(QMainWindow):
         self.alignment_slider.setValue(int(self.coeffs["alignment"] * config.slider_multiplier))
         self.alignment_slider.valueChanged.connect(self.alignment_change)
 
+        self.perception_radius_slider.setRange(config.perception_radius_range[0], config.perception_radius_range[1])
+        self.perception_radius_slider.setValue(int(self.perception_radius * config.slider_multiplier))
+        self.perception_radius_slider.valueChanged.connect(self.perception_radius_change)
+
+        # установка в layout
+
         layout.addWidget(self.canvas.native)
-        layout.addWidget(self.wall_bounce_checkbox)
+
+        # layout.addWidget(self.wall_bounce_checkbox)
+
         layout.addWidget(self.cohesion_label)
-        layout.addWidget(self.cohesion_slider)
         layout.addWidget(self.separation_label)
-        layout.addWidget(self.separation_slider)
         layout.addWidget(self.alignment_label)
+        layout.addWidget(self.perception_radius_label)
+
+        layout.addWidget(self.cohesion_slider)
+        layout.addWidget(self.separation_slider)
         layout.addWidget(self.alignment_slider)
+        layout.addWidget(self.perception_radius_slider)
 
     def cohesion_change(self, value):
         value = value / config.slider_multiplier
@@ -115,7 +135,6 @@ class BoidsSimulation(QMainWindow):
 
     def separation_change(self, value):
         value = value / config.slider_multiplier
-
         self.coeffs["separation"] = float(value)
         self.separation_label.setText(f"Separation: {value}")
         print(f"Separation changed to: {value}")
@@ -126,12 +145,18 @@ class BoidsSimulation(QMainWindow):
         self.alignment_label.setText(f"Alignment: {value}")
         print(f"Alignment changed to: {value}")
 
-    def wall_bounce_change(self, state):
-        if state == 2:
-            self.wall_bounce = True
-        else:
-            self.wall_bounce = False
-        print(f"Wall bounce changed to: {self.wall_bounce}")
+    def perception_radius_change(self, value):
+        value = value / config.slider_multiplier
+        self.perception_radius = value
+        self.perception_radius_label.setText(f"Perception radius: 1 / {self.perception_radius}")
+        print(f"Perception radius changed to: 1 / {self.perception_radius}")
+
+    # def wall_bounce_change(self, state):
+    #     if state == 2:
+    #         self.wall_bounce = True
+    #     else:
+    #         self.wall_bounce = False
+    #     print(f"Wall bounce changed to: {self.wall_bounce}")
 
     def update(self):
         start_time = time.time()  # начало отсчета времени
