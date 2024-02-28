@@ -115,20 +115,6 @@ def cohesion(boids: np.ndarray, i: int, distance_mask: np.ndarray):
 
 @njit
 def compute_walls_interations(boids: np.ndarray, i: int, aspect_ratio: float):
-    mask_walls = np.empty(4)
-    mask_walls[0] = boids[i, 1] > 1
-    mask_walls[1] = boids[i, 0] > aspect_ratio
-    mask_walls[2] = boids[i, 1] < 0
-    mask_walls[3] = boids[i, 0] < 0
-
-    if mask_walls[0]:
-        boids[i, 1] = 0
-    if mask_walls[1]:
-        boids[i, 0] = 0
-    if mask_walls[2]:
-        boids[i, 1] = 1
-    if mask_walls[3]:
-        boids[i, 0] = aspect_ratio
     # mask_walls = np.empty(4)
     # mask_walls[0] = boids[i, 1] > 1
     # mask_walls[1] = boids[i, 0] > aspect_ratio
@@ -136,20 +122,34 @@ def compute_walls_interations(boids: np.ndarray, i: int, aspect_ratio: float):
     # mask_walls[3] = boids[i, 0] < 0
     #
     # if mask_walls[0]:
-    #     boids[i, 3] = -boids[i, 3]
-    #     boids[i][1] = 1 - 0.001
-    #
+    #     boids[i, 1] = 0
     # if mask_walls[1]:
-    #     boids[i, 2] = -boids[i, 2]
-    #     boids[i, 0] = aspect_ratio - 0.001
-    #
+    #     boids[i, 0] = 0
     # if mask_walls[2]:
-    #     boids[i, 3] = -boids[i, 3]
-    #     boids[i, 1] = 0.001
-    #
+    #     boids[i, 1] = 1
     # if mask_walls[3]:
-    #     boids[i, 2] = -boids[i, 2]
-    #     boids[i, 0] = 0.001
+    #     boids[i, 0] = aspect_ratio
+    mask_walls = np.empty(4)
+    mask_walls[0] = boids[i, 1] > 1
+    mask_walls[1] = boids[i, 0] > aspect_ratio
+    mask_walls[2] = boids[i, 1] < 0
+    mask_walls[3] = boids[i, 0] < 0
+
+    if mask_walls[0]:
+        boids[i, 3] = -boids[i, 3]
+        boids[i][1] = 1 - 0.001
+
+    if mask_walls[1]:
+        boids[i, 2] = -boids[i, 2]
+        boids[i, 0] = aspect_ratio - 0.001
+
+    if mask_walls[2]:
+        boids[i, 3] = -boids[i, 3]
+        boids[i, 1] = 0.001
+
+    if mask_walls[3]:
+        boids[i, 2] = -boids[i, 2]
+        boids[i, 0] = 0.001
 
 
 @njit(parallel=True)
@@ -168,18 +168,19 @@ def flocking(boids: np.ndarray, perseption: float, coeffitients: np.ndarray, asp
         compute_walls_interations(boids, i, aspect_ratio)
 
         if np.any(perception_mask):
-            if np.any(separation_mask):
-                a_separation = separation(boids, i, separation_mask)
+            # if np.any(separation_mask):
+            #     a_separation = separation(boids, i, separation_mask)
             if np.any(cohesion_mask):
                 a_cohesion = cohesion(boids, i, cohesion_mask)
-            a_alignment = alignment(boids, i, perception_mask)
-            a_separation = clip_vector(a_separation, a_range)
-            a_cohesion = clip_vector(a_cohesion, a_range)
+            # a_alignment = alignment(boids, i, perception_mask)
+            # a_separation = clip_vector(a_separation, a_range)
+            # a_cohesion = clip_vector(a_cohesion, a_range)
 
         acceleration = coeffitients[0] * a_separation \
                        + coeffitients[1] * a_cohesion \
                        + coeffitients[2] * a_alignment
-        boids[i, 4:6] = acceleration
+        boids[i, 4:6] = acceleration * 1000
+
 
 
 def propagate(boids, delta_time, v_range):

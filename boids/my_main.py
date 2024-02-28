@@ -1,7 +1,7 @@
 from vispy import app, scene
 from vispy.geometry import Rect
 import time
-from my_funcs import *
+from nikitas_funcs import *
 import config as config
 
 app.use_app('pyqt6')
@@ -11,7 +11,7 @@ delta_time = 0.0
 coeffs = np.array([config.coeffs["cohesion"], config.coeffs["separation"], config.coeffs["alignment"]])
 
 boids = np.zeros((config.N, 6), dtype=np.float64)  # одна строка матрица <-> одна птица с параметрами [x, y, vx, vy, dvx, dvy]
-init_boids(boids, config.size, velocity_range=config.velocity_range)  # создаем птиц
+init_boids(boids, config.size, config.velocity_range[0])  # создаем птиц
 
 canvas = scene.SceneCanvas(show=True, size=(config.W, config.H))  # создаем сцену
 view = canvas.central_widget.add_view()
@@ -27,7 +27,7 @@ def update(event):
     global delta_time
     start_time = time.time()  # начало отсчета времени
 
-    flocking(boids, config.perception_radius, coeffs, config.size)  # пересчет ускорений (взаимодействие между птицами)
+    flocking(boids, config.perception_radius, coeffs, config.size[0], config.velocity_range)  # пересчет ускорений (взаимодействие между птицами)
     propagate(boids, delta_time, config.velocity_range)  # пересчет скоростей на основе ускорений
     paint_arrows(arrows, boids, delta_time)  # отрисовка стрелок
     canvas.update()  # отображение

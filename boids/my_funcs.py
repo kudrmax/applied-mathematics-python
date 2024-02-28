@@ -96,7 +96,11 @@ def compute_distances(boids: np.ndarray) -> np.ndarray:
     dist = np.empty(shape=(n, n), dtype=np.float64)
     for i in prange(n):
         dr_arr = boids[i, 0:2] - boids[:, 0:2]
-        dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
+        dist[i] = njit_norm_axis1(dr_arr)
+        # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
+
+
+
         # dist[i] = np.sqrt((boids[i, 0:2] - boids[:, 0:2])[:, 0] ** 2 + (boids[i, 0:2] - boids[:, 0:2])[:, 1] ** 2)
         # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
         # dr_arr = boids[i, 0:2] - boids[:, 0:2]
@@ -109,6 +113,13 @@ def compute_distances(boids: np.ndarray) -> np.ndarray:
 @njit
 def my_norm_1d(arr: np.array) -> np.ndarray:
     return np.sqrt(arr[0] ** 2 + arr[1] ** 2)
+
+@njit
+def njit_norm_vector(vector: np.ndarray):
+    norm = 0
+    for j in prange(vector.shape[0]):
+        norm += vector[j] * vector[j]
+    return np.sqrt(norm)
 
 @njit
 def compute_separation(boids: np.ndarray, i: int, distance_mask: np.ndarray):
@@ -228,8 +239,8 @@ def flocking(boids: np.ndarray,
     # считаем расстояния
     distances = compute_distances(boids)  # матрица с расстояниями между всеми птицами
     N = boids.shape[0]
-    for i in prange(N):  # выкидываем расстояния между i и i
-        distances[i, i] = np.inf
+    # for i in prange(N):  # выкидываем расстояния между i и i
+    #     distances[i, i] = np.inf
 
     # считаем маски
     mask_cohesion = distances < (perception_radius * 2) * (distances > perception_radius / 2)
@@ -248,8 +259,8 @@ def flocking(boids: np.ndarray,
         separation = np.zeros(2)
         alignment = np.zeros(2)
 
-        if np.any(mask_cohesion[i]):
-            cohesion = compute_cohesion(boids, i, mask_cohesion[i])
+        # if np.any(mask_cohesion[i]):
+        #     cohesion = compute_cohesion(boids, i, mask_cohesion[i])
         # if np.any(mask_separation[i]):
         #     separation = compute_separation(boids, i, mask_separation[i])
         # if np.any(mask_alignment[i]):
