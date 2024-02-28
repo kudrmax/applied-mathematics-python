@@ -137,7 +137,7 @@ class BoidsSimulation(QMainWindow):
         start_time = time.time()  # начало отсчета времени
         coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
         flocking(self.boids, config.perception_radius, coeffs_for_numba,
-                 config.size[0], config.velocity_range)  # пересчет ускорений (взаимодействие между птицами)
+                 config.size)  # пересчет ускорений (взаимодействие между птицами)
         propagate(self.boids, self.delta_time, config.velocity_range)  # пересчет скоростей на основе ускорений
         paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
         self.canvas.update()  # отображение
