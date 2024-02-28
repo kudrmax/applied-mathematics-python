@@ -10,9 +10,9 @@ velocity_range = (0, .1)  # ограничения на скорости
 acceleration_range = (0, .1)  # ограничения на ускорения
 
 slider_multiplier = 1000
-cohesion_range = (0, 1000.1)
-separation_range = (0, 0.1)
-alignment_range = (0, 0.1)
+cohesion_range = (0, .5)
+separation_range = cohesion_range
+alignment_range = cohesion_range
 
 max_speed_magnitude = 4
 max_delta_velocity_magnitude = 10
@@ -26,6 +26,11 @@ coeffs = {
     'cohesion': .4,
     'separation': .01,
     'alignment': .02,
+}
+coeffs = {
+    'cohesion': .0,
+    'separation': .0,
+    'alignment': .0,
 }
 
 
