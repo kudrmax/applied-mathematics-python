@@ -4,13 +4,13 @@ import numpy as np
 
 W, H = 1920 * 2, 1080 * 2  # размеры экрана
 N = 5000  # кол-во птиц
-fraction_of_perception_radius = 1 / 20
+fraction_of_perception_radius = 1 / 30
 
 velocity_range = (0, .1)  # ограничения на скорости
 acceleration_range = (0, .1)  # ограничения на ускорения
 
 slider_multiplier = 1000
-cohesion_range = (0, 0.1)
+cohesion_range = (0, 1000.1)
 separation_range = (0, 0.1)
 alignment_range = (0, 0.1)
 
@@ -22,6 +22,12 @@ coeffs = {
     'separation': .01,
     'alignment': .02,
 }
+coeffs = {
+    'cohesion': .4,
+    'separation': .01,
+    'alignment': .02,
+}
+
 
 # внутренние расчеты
 

@@ -52,7 +52,7 @@ class BoidsSimulation(QMainWindow):
         self.view.camera = scene.PanZoomCamera(rect=Rect(0, 0, self.size[0], self.size[1]))
         self.arrows = scene.Arrow(arrows=directions(self.boids, self.delta_time),
                                   arrow_color=(1, 1, 1, 1),
-                                  arrow_size=10,
+                                  arrow_size=5,
                                   connect='segments',
                                   parent=self.view.scene)
 
@@ -136,8 +136,9 @@ class BoidsSimulation(QMainWindow):
     def update(self):
         start_time = time.time()  # начало отсчета времени
         coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
+        print(coeffs_for_numba)
         flocking(self.boids, config.perception_radius, coeffs_for_numba,
-                 config.size[0], self.velocity_range)  # пересчет ускорений (взаимодействие между птицами)
+                 config.size[0], config.velocity_range)  # пересчет ускорений (взаимодействие между птицами)
         propagate(self.boids, self.delta_time, config.velocity_range)  # пересчет скоростей на основе ускорений
         paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
         self.canvas.update()  # отображение
