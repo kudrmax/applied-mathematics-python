@@ -4,7 +4,7 @@ import numpy as np
 
 W, H = 1920 * 2, 1080 * 2  # размеры экрана
 N = 5000  # кол-во птиц
-fraction_of_perception_radius = 1 / 20
+fraction_of_perception_radius = 1 / 30
 
 velocity_range = (0, .1)  # ограничения на скорости
 acceleration_range = (0, .1)  # ограничения на ускорения

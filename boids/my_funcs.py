@@ -96,62 +96,91 @@ def compute_distances(boids: np.ndarray) -> np.ndarray:
     dist = np.empty(shape=(n, n), dtype=np.float64)
     for i in prange(n):
         dr_arr = boids[i, 0:2] - boids[:, 0:2]
-        norm = np.zeros(n, dtype=np.float64)
-        for j in range(n):
-            norm[j] = np.sqrt(dr_arr[j, 0] * dr_arr[j, 0] + dr_arr[j, 1] * dr_arr[j, 1])
-        dist[i] = norm
-        # for j in range(n):
-        #     dist[i, j] = np.sqrt(np.sum((r[i] - r[j]) ** 2))
+        dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
+        # dist[i] = np.sqrt((boids[i, 0:2] - boids[:, 0:2])[:, 0] ** 2 + (boids[i, 0:2] - boids[:, 0:2])[:, 1] ** 2)
+        # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
+        # dr_arr = boids[i, 0:2] - boids[:, 0:2]
+        # norm = np.empty(n, dtype=np.float64)
+        # for j in prange(n):
+        #     norm[j] = np.sqrt(dr_arr[j, 0] ** 2 + dr_arr[j, 1] ** 2)
+        # dist[i] = norm
     return dist
 
+@njit
+def my_norm_1d(arr: np.array) -> np.ndarray:
+    return np.sqrt(arr[0] ** 2 + arr[1] ** 2)
 
 @njit
-def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
-    """
-    Steer to move towards the average position (center of mass) of local flockmates
-    """
-    steering_pos = np.mean(boids[mask][:, 0:2])
-    delta_steering_pos = steering_pos - boids[id][0:2]
-    delta_steering_pos = delta_steering_pos / np.linalg.norm(delta_steering_pos)
-    delta_steering_pos *= config.max_speed_magnitude
-    delta_steering_v = delta_steering_pos - boids[id, 2:4]
-    if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
-        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-        delta_steering_v *= config.max_delta_velocity_magnitude
-    return delta_steering_v
+def compute_separation(boids: np.ndarray, i: int, distance_mask: np.ndarray):
+    distance_mask[i] = False
+    directions = boids[i, :2] - boids[distance_mask][:, :2]
+    directions *= (1 / (njit_norm_axis1(directions) + 0.0001))
+    acceleration = np.sum(directions, axis=0)
+    return acceleration - boids[i, 2:4]
 
 
 @njit
-def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
-    """
-    steer to avoid crowding local flockmates
-    """
-    steering_pos = np.sum(
-        (boids[id][0:2] - boids[mask][:, 0:2])
-        / (np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2]) ** 2),
-        axis=0)
-    steering_pos /= np.linalg.norm(steering_pos)
-    steering_pos *= config.max_speed_magnitude
-    delta_steering_v = steering_pos - boids[id, 2:4]
-    if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
-        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-        delta_steering_v *= config.max_delta_velocity_magnitude
-    return delta_steering_v
+def compute_alignment(boids: np.ndarray, i: int, distance_mask: np.ndarray):
+    velocity = boids[distance_mask][:, 2:4]
+    acceleration = np.sum(velocity, axis=0)
+    acceleration /= velocity.shape[0]
+    return acceleration - boids[i, 2:4]
 
 
 @njit
-def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
-    """
-    steer towards the average heading of local flockmates
-    """
-    steering_v = np.sum(boids[mask][:, 2:4], axis=0)
-    steering_v /= np.linalg.norm(steering_v)
-    steering_v *= config.max_speed_magnitude
-    delta_steering_v = steering_v - boids[id][2:4]
-    if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
-        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-        delta_steering_v *= config.max_delta_velocity_magnitude
-    return delta_steering_v
+def compute_cohesion(boids: np.ndarray, i: int, distance_mask: np.ndarray):
+    directions = boids[distance_mask][:, :2] - boids[i, :2]
+    acceleration = np.sum(directions, axis=0)
+    acceleration /= directions.shape[0]
+    return acceleration - boids[i, 2:4]
+
+# @njit
+# def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
+#     """
+#     Steer to move towards the average position (center of mass) of local flockmates
+#     """
+#     steering_pos = np.mean(boids[mask][:, 0:2])
+#     delta_steering_pos = steering_pos - boids[id][0:2]
+#     delta_steering_pos = delta_steering_pos / np.linalg.norm(delta_steering_pos)
+#     delta_steering_pos *= config.max_speed_magnitude
+#     delta_steering_v = delta_steering_pos - boids[id, 2:4]
+#     if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+#         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+#         delta_steering_v *= config.max_delta_velocity_magnitude
+#     return delta_steering_v
+#
+#
+# @njit
+# def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
+#     """
+#     steer to avoid crowding local flockmates
+#     """
+#     steering_pos = np.sum(
+#         (boids[id][0:2] - boids[mask][:, 0:2])
+#         / (np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2]) ** 2),
+#         axis=0)
+#     steering_pos /= np.linalg.norm(steering_pos)
+#     steering_pos *= config.max_speed_magnitude
+#     delta_steering_v = steering_pos - boids[id, 2:4]
+#     if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+#         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+#         delta_steering_v *= config.max_delta_velocity_magnitude
+#     return delta_steering_v
+#
+#
+# @njit
+# def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
+#     """
+#     steer towards the average heading of local flockmates
+#     """
+#     steering_v = np.sum(boids[mask][:, 2:4], axis=0)
+#     steering_v /= np.linalg.norm(steering_v)
+#     steering_v *= config.max_speed_magnitude
+#     delta_steering_v = steering_v - boids[id][2:4]
+#     if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+#         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+#         delta_steering_v *= config.max_delta_velocity_magnitude
+#     return delta_steering_v
 
 
 @njit
@@ -207,11 +236,11 @@ def flocking(boids: np.ndarray,
     mask_separation = distances < perception_radius / 2
     mask_alignment = distances < perception_radius
 
-    mask_walls = np.empty((4, boids.shape[0]))
-    mask_walls[0] = boids[:, 1] > screen_size[1]
-    mask_walls[1] = boids[:, 0] > screen_size[0]
-    mask_walls[2] = boids[:, 1] < 0
-    mask_walls[3] = boids[:, 0] < 0
+    # mask_walls = np.empty((4, boids.shape[0]))
+    # mask_walls[0] = boids[:, 1] > screen_size[1]
+    # mask_walls[1] = boids[:, 0] > screen_size[0]
+    # mask_walls[2] = boids[:, 1] < 0
+    # mask_walls[3] = boids[:, 0] < 0
 
     # вычисляем взаимодействие между птицами
     for i in prange(N):
@@ -221,17 +250,17 @@ def flocking(boids: np.ndarray,
 
         if np.any(mask_cohesion[i]):
             cohesion = compute_cohesion(boids, i, mask_cohesion[i])
-        if np.any(mask_separation[i]):
-            separation = compute_separation(boids, i, mask_separation[i])
-        if np.any(mask_alignment[i]):
-            alignment = compute_alignment(boids, i, mask_alignment[i])
-        noise = compute_noise(boids[i])
+        # if np.any(mask_separation[i]):
+        #     separation = compute_separation(boids, i, mask_separation[i])
+        # if np.any(mask_alignment[i]):
+        #     alignment = compute_alignment(boids, i, mask_alignment[i])
+        # noise = compute_noise(boids[i])
 
         boids[i, 4:6] = \
             coeff[0] * cohesion + \
             coeff[1] * separation + \
-            coeff[2] * alignment + \
-            noise
+            coeff[2] * alignment \
+            # + noise
 
     # коллизия
-    compute_walls_interations(boids, mask_walls, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
+    # compute_walls_interations(boids, mask_walls, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)

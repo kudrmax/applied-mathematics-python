@@ -52,7 +52,7 @@ class BoidsSimulation(QMainWindow):
         self.view.camera = scene.PanZoomCamera(rect=Rect(0, 0, self.size[0], self.size[1]))
         self.arrows = scene.Arrow(arrows=directions(self.boids, self.delta_time),
                                   arrow_color=(1, 1, 1, 1),
-                                  arrow_size=10,
+                                  arrow_size=5,
                                   connect='segments',
                                   parent=self.view.scene)
 
