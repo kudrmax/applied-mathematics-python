@@ -196,16 +196,17 @@ def flocking(boids: np.ndarray,
 
         mask_in_perseption_radius = D < perception_radius
 
-        mask_alignment = mask_in_perseption_radius
-        mask_separation = D < perception_radius / 2
-        mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
+        # mask_alignment = mask_in_perseption_radius
+        # mask_separation = D < perception_radius / 2
+        # mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
 
         # mask_sector = mask_in_perseption_radius
         alpha = 30.0
         mask_sector = compute_mask_sector(boids, mask_in_perseption_radius, i, alpha)
-        mask_alignment = np.logical_and(mask_alignment, mask_sector)
-        mask_separation = np.logical_and(mask_separation, mask_sector)
-        mask_cohesion = np.logical_and(mask_cohesion, mask_sector)
+        mask_alignment = np.logical_and(mask_in_perseption_radius, mask_sector)
+        mask_separation = np.logical_and(D < perception_radius / 2, mask_sector)
+        mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
+        # mask_cohesion = np.logical_and(np.logical_xor(mask_separation, mask_alignment), mask_sector)
 
         mask_separation[i] = False
         mask_alignment[i] = False
