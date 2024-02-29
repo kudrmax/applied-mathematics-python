@@ -49,6 +49,8 @@ class BoidsSimulation(QMainWindow):
         # boids
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
+        self.main_characters_boids = self.boids[0:1]
+        self.main_characters_boids_in_visual_range = np.empty(self.main_characters_boids.shape[0])
 
         # canvas
         self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H))  # создаем сцену
@@ -57,6 +59,16 @@ class BoidsSimulation(QMainWindow):
         self.arrows = scene.Arrow(arrows=directions(self.boids, self.delta_time),
                                   arrow_color=(1, 1, 1, 1),
                                   arrow_size=5,
+                                  connect='segments',
+                                  parent=self.view.scene)
+        self.red_arrows = scene.Arrow(arrows=directions(self.boids[0:1], self.delta_time),
+                                  arrow_color=(1, 0, 0, 1),
+                                  arrow_size=10,
+                                  connect='segments',
+                                  parent=self.view.scene)
+        self.blue_arrows = scene.Arrow(
+                                  arrow_color=(0, 1, 0, 1),
+                                  arrow_size=7.5,
                                   connect='segments',
                                   parent=self.view.scene)
 
@@ -161,10 +173,13 @@ class BoidsSimulation(QMainWindow):
     def update(self):
         start_time = time.time()  # начало отсчета времени
         coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
-        flocking(self.boids, self.perception_radius, coeffs_for_numba,
+        neighbours = flocking(self.boids, self.perception_radius, coeffs_for_numba,
                  config.size)  # пересчет ускорений (взаимодействие между птицами)
         propagate(self.boids, self.delta_time, config.velocity_range)  # пересчет скоростей на основе ускорений
-        paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
+        # paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
+        self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
+        self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
+        self.blue_arrows.set_data(arrows=directions(neighbours, self.delta_time))  # отрисовка стрелок
         self.canvas.update()  # отображение
 
         # time.sleep(0.05) # строка для проверки того, что игра FPS независимая

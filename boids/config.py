@@ -3,7 +3,7 @@ import numpy as np
 # настраиваемые
 
 W, H = 1920 * 2, 1080 * 2  # размеры экрана
-N = 5000  # кол-во птиц
+N = 1000  # кол-во птиц
 perception_radius = 1 / 30
 
 velocity_range = (0, .1)  # ограничения на скорости
@@ -15,15 +15,16 @@ separation_range = cohesion_range
 alignment_range = cohesion_range
 perception_radius_range = (1, 80)
 
-max_speed_magnitude = 4
-max_delta_velocity_magnitude = 10
+arrow_size = 5
+
+max_speed_magnitude = 1  # 4
+max_delta_velocity_magnitude = 1  # 10
 
 coeffs = {
     'cohesion': .001,
     'separation': .001,
     'alignment': .001,
 }
-
 
 # внутренние расчеты
 

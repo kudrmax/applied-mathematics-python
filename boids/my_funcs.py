@@ -10,10 +10,6 @@ def get_normal_vec(vec: np.array) -> np.array:
     return vec_rotated
 
 
-def paint_arrows(arrows, boids, dt):
-    arrows.set_data(arrows=directions(boids, dt))  # отрисовка стрелок
-
-
 def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0., 1.)):
     """
     Функция, отвечающая за создание птиц
@@ -190,6 +186,7 @@ def flocking(boids: np.ndarray,
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
+    neighbours = np.full(boids.shape[0], False)
     for i in prange(boids.shape[0]):
 
         D = compute_distance(boids, i)
@@ -228,9 +225,14 @@ def flocking(boids: np.ndarray,
                        + coeff[2] * a_alignment
         boids[i, 4:6] = acceleration
 
+        if i == 0:
+            for j in range(neighbours.shape[0]):
+                neighbours[j] = mask_alignment[j]
+            # neighbours = mask_alignment[:]
+
     # коллизия
     compute_walls_interations(boids, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
-
+    return boids[neighbours]
 
 def propagate(boids: np.ndarray, dt: float, velocity_range: np.array):
     """
