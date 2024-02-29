@@ -1,5 +1,5 @@
 import time
-from my_and_nikitas_funcs import *
+from my_funcs import *
 import config as config
 
 from vispy import app, scene

@@ -1,5 +1,5 @@
-from numba import njit, prange
 import numpy as np
+from numba import njit, prange
 import config as config
 
 
@@ -46,7 +46,29 @@ def directions(boids: np.ndarray, dt: float):
     return np.hstack((pos0, pos))
 
 
-def vclip(v: np.ndarray, velocity_range: tuple[float, float]):
+# @njit
+# def njit_norm_axis1(vector: np.ndarray):
+#     norm = np.zeros(vector.shape[0], dtype=np.float64)
+#     for j in prange(vector.shape[0]):
+#         norm[j] = np.sqrt(vector[j, 0] * vector[j, 0] + vector[j, 1] * vector[j, 1])
+#     return norm
+#
+#
+# @njit
+# def njit_norm_vector(vector: np.ndarray):
+#     norm = 0
+#     for j in range(vector.shape[0]):
+#         norm += vector[j] * vector[j]
+#     return np.sqrt(norm)
+
+
+@njit
+def compute_distance(boids: np.ndarray, i: int):
+    dr = boids[i, 0:2] - boids[:, 0:2]
+    return np.sqrt(dr[:, 0] ** 2 + dr[:, 1] ** 2)
+
+
+def vclip(v: np.ndarray, velocity_range: np.array):
     """
     Если скорость выходит за разрешенные скорости, то мы обрезаем скорость
     """
@@ -56,175 +78,83 @@ def vclip(v: np.ndarray, velocity_range: tuple[float, float]):
         v[mask] *= velocity_range[1] / norm[mask, None]
 
 
-def propagate(boids: np.ndarray, dt: float, velocity_range: tuple[float, float]):
+@njit
+def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
     """
-    Пересчет скоростей за время dt
+    Steer to move towards the average position (center of mass) of local flockmates
     """
-    boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
-    vclip(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
-    boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
+    if boids[mask].shape[0] > 1:
+        steering_pos = np.sum(boids[mask][:, 0:2], axis=0)
+        steering_pos /= boids[mask].shape[0]
+        delta_steering_pos = steering_pos - boids[id][0:2]
+        delta_steering_pos /= np.linalg.norm(delta_steering_pos)
+        delta_steering_pos *= config.max_speed_magnitude
+        delta_steering_v = delta_steering_pos - boids[id, 2:4]
+        if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+            delta_steering_v /= np.linalg.norm(delta_steering_v)
+            delta_steering_v *= config.max_delta_velocity_magnitude
+        return delta_steering_v
+    else:
+        return np.zeros(2)
+
+@njit
+def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
+    """
+    steer to avoid crowding local flockmates
+    """
+    dr = boids[id][0:2] - boids[mask][:, 0:2]
+    dr *= 1 / (dr[:, 0] ** 2 + dr[:, 1] ** 2)
+    steering_pos = np.sum(dr, axis=0)
+    steering_pos /= np.linalg.norm(steering_pos)
+    steering_pos *= config.max_speed_magnitude
+    delta_steering_v = steering_pos - boids[id, 2:4]
+    if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+        delta_steering_v *= config.max_delta_velocity_magnitude
+    return delta_steering_v
 
 
 @njit
-def njit_norm_axis1(vector: np.ndarray):
-    norm = np.zeros(vector.shape[0], dtype=np.float64)
-    for j in prange(vector.shape[0]):
-        norm[j] = np.sqrt(vector[j, 0] * vector[j, 0] + vector[j, 1] * vector[j, 1])
-    return norm
-
-
-@njit
-def njit_norm_vector(vector: np.ndarray):
-    norm = 0
-    for j in prange(vector.shape[0]):
-        norm += vector[j] * vector[j]
-    return np.sqrt(norm)
+def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
+    """
+    steer towards the average heading of local flockmates
+    """
+    steering_v = np.sum(boids[mask][:, 2:4], axis=0)
+    steering_v /= np.linalg.norm(steering_v)
+    steering_v *= config.max_speed_magnitude
+    delta_steering_v = steering_v - boids[id][2:4]
+    if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
+        delta_steering_v *= config.max_delta_velocity_magnitude
+    return delta_steering_v
 
 
 @njit(parallel=True)
-def compute_distances(boids: np.ndarray) -> np.ndarray:
-    """
-    Вычисляет матрицу, где в ячейке (i, j) записано расстояние между птицей i и птицей j
-    """
-    # n, m = boids.shape
-    # vector_distance_difference = boids.reshape((n, 1, m)) - boids.reshape((1, n, m))
-    # norm_of_distance_difference = np.linalg.norm(vector_distance_difference, axis=2)
-    # return norm_of_distance_difference
+def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
+    mask_walls = np.empty((4, boids.shape[0]))
+    mask_walls[0] = boids[:, 1] > screen_size[1]
+    mask_walls[1] = boids[:, 0] > screen_size[0]
+    mask_walls[2] = boids[:, 1] < 0
+    mask_walls[3] = boids[:, 0] < 0
 
-    r = boids[:, :2]
-    n = r.shape[0]
-    dist = np.empty(shape=(n, n), dtype=np.float64)
-    for i in prange(n):
-        dr_arr = boids[i, 0:2] - boids[:, 0:2]
-        dist[i] = njit_norm_axis1(dr_arr)
-        # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
-
-        # dist[i] = np.sqrt((boids[i, 0:2] - boids[:, 0:2])[:, 0] ** 2 + (boids[i, 0:2] - boids[:, 0:2])[:, 1] ** 2)
-        # dist[i] = np.sqrt(dr_arr[:, 0] ** 2 + dr_arr[:, 1] ** 2)
-        # dr_arr = boids[i, 0:2] - boids[:, 0:2]
-        # norm = np.empty(n, dtype=np.float64)
-        # for j in prange(n):
-        #     norm[j] = np.sqrt(dr_arr[j, 0] ** 2 + dr_arr[j, 1] ** 2)
-        # dist[i] = norm
-    return dist
-
-
-@njit
-def my_norm_1d(arr: np.array) -> np.ndarray:
-    return np.sqrt(arr[0] ** 2 + arr[1] ** 2)
-
-
-@njit
-def njit_norm_vector(vector: np.ndarray):
-    norm = 0
-    for j in prange(vector.shape[0]):
-        norm += vector[j] * vector[j]
-    return np.sqrt(norm)
-
-
-@njit
-def compute_separation(boids: np.ndarray, i: int, distance_mask: np.ndarray):
-    distance_mask[i] = False
-    directions = boids[i, :2] - boids[distance_mask][:, :2]
-    directions *= (1 / (njit_norm_axis1(directions) + 0.0001))
-    acceleration = np.sum(directions, axis=0)
-    return acceleration - boids[i, 2:4]
-
-
-@njit
-def compute_alignment(boids: np.ndarray, i: int, distance_mask: np.ndarray):
-    velocity = boids[distance_mask][:, 2:4]
-    acceleration = np.sum(velocity, axis=0)
-    acceleration /= velocity.shape[0]
-    return acceleration - boids[i, 2:4]
-
-
-@njit
-def compute_cohesion(boids: np.ndarray, i: int, distance_mask: np.ndarray):
-    directions = boids[distance_mask][:, :2] - boids[i, :2]
-    acceleration = np.sum(directions, axis=0)
-    acceleration /= directions.shape[0]
-    return acceleration - boids[i, 2:4]
-
-
-# @njit
-# def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
-#     """
-#     Steer to move towards the average position (center of mass) of local flockmates
-#     """
-#     steering_pos = np.mean(boids[mask][:, 0:2])
-#     delta_steering_pos = steering_pos - boids[id][0:2]
-#     delta_steering_pos = delta_steering_pos / np.linalg.norm(delta_steering_pos)
-#     delta_steering_pos *= config.max_speed_magnitude
-#     delta_steering_v = delta_steering_pos - boids[id, 2:4]
-#     if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
-#         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-#         delta_steering_v *= config.max_delta_velocity_magnitude
-#     return delta_steering_v
-#
-#
-# @njit
-# def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
-#     """
-#     steer to avoid crowding local flockmates
-#     """
-#     steering_pos = np.sum(
-#         (boids[id][0:2] - boids[mask][:, 0:2])
-#         / (np.linalg.norm(boids[id][0:2] - boids[mask][:, 0:2]) ** 2),
-#         axis=0)
-#     steering_pos /= np.linalg.norm(steering_pos)
-#     steering_pos *= config.max_speed_magnitude
-#     delta_steering_v = steering_pos - boids[id, 2:4]
-#     if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
-#         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-#         delta_steering_v *= config.max_delta_velocity_magnitude
-#     return delta_steering_v
-#
-#
-# @njit
-# def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
-#     """
-#     steer towards the average heading of local flockmates
-#     """
-#     steering_v = np.sum(boids[mask][:, 2:4], axis=0)
-#     steering_v /= np.linalg.norm(steering_v)
-#     steering_v *= config.max_speed_magnitude
-#     delta_steering_v = steering_v - boids[id][2:4]
-#     if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
-#         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-#         delta_steering_v *= config.max_delta_velocity_magnitude
-#     return delta_steering_v
-
-
-@njit
-def compute_noise(boid: np.array):
-    return get_normal_vec(boid[2:4]) * np.random.uniform(-0.1, 0.1)
-
-
-@njit(parallel=True)
-def compute_walls_interations(boids: np.ndarray, mask: np.ndarray, screen_size: np.array):
     for i in prange(boids.shape[0]):
-        if mask[0][i]:
+        if mask_walls[0][i]:
             boids[i][3] = -boids[i][3]
-            # boids[i][3] *= 200000
             boids[i][1] = screen_size[1] - 0.001
 
-        if mask[1][i]:
+        if mask_walls[1][i]:
             boids[i][2] = -boids[i][2]
-            # boids[i][2] *= 200000
             boids[i][0] = screen_size[0] - 0.001
 
-        if mask[2][i]:
+        if mask_walls[2][i]:
             boids[i][3] = -boids[i][3]
-            # boids[i][3] *= 200000
             boids[i][1] = 0.001
 
-        if mask[3][i]:
+        if mask_walls[3][i]:
             boids[i][2] = -boids[i][2]
-            # boids[i][2] *= 200000
             boids[i][0] = 0.001
 
-    for mask_wall in mask:
+    for mask_wall in mask_walls:
         for i in prange(boids.shape[0]):
             if mask_wall[i]:
                 boids[i, 4:6] = np.zeros(2)
@@ -238,42 +168,42 @@ def flocking(boids: np.ndarray,
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
-    # считаем расстояния
-    distances = compute_distances(boids)  # матрица с расстояниями между всеми птицами
-    N = boids.shape[0]
-    # for i in prange(N):  # выкидываем расстояния между i и i
-    #     distances[i, i] = np.inf
+    for i in prange(boids.shape[0]):
 
-    # считаем маски
-    mask_cohesion = distances < (perception_radius * 2) * (distances > perception_radius / 2)
-    mask_separation = distances < perception_radius / 2
-    mask_alignment = distances < perception_radius
+        D = compute_distance(boids, i)
 
-    # mask_walls = np.empty((4, boids.shape[0]))
-    # mask_walls[0] = boids[:, 1] > screen_size[1]
-    # mask_walls[1] = boids[:, 0] > screen_size[0]
-    # mask_walls[2] = boids[:, 1] < 0
-    # mask_walls[3] = boids[:, 0] < 0
+        mask_alignment = D < perception_radius
+        mask_separation = D < perception_radius / 2
+        mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
 
-    # вычисляем взаимодействие между птицами
-    for i in prange(N):
-        cohesion = np.zeros(2)
-        separation = np.zeros(2)
-        alignment = np.zeros(2)
+        mask_separation[i] = False
+        mask_alignment[i] = False
 
-        # if np.any(mask_cohesion[i]):
-        #     cohesion = compute_cohesion(boids, i, mask_cohesion[i])
-        # if np.any(mask_separation[i]):
-        #     separation = compute_separation(boids, i, mask_separation[i])
-        # if np.any(mask_alignment[i]):
-        #     alignment = compute_alignment(boids, i, mask_alignment[i])
+        a_separation = np.zeros(2)
+        a_cohesion = np.zeros(2)
+        a_alignment = np.zeros(2)
+
+        if np.any(mask_cohesion):
+            a_cohesion = compute_cohesion(boids, i, mask_cohesion)
+        if np.any(mask_separation):
+            a_separation = compute_separation(boids, i, mask_separation)
+        if np.any(mask_alignment):
+            a_alignment = compute_alignment(boids, i, mask_alignment)
         # noise = compute_noise(boids[i])
 
-        boids[i, 4:6] = \
-            coeff[0] * cohesion + \
-            coeff[1] * separation + \
-            coeff[2] * alignment \
-            # + noise
+        acceleration = coeff[0] * a_cohesion \
+                       + coeff[1] * a_separation \
+                       + coeff[2] * a_alignment
+        boids[i, 4:6] = acceleration
 
     # коллизия
-    # compute_walls_interations(boids, mask_walls, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
+    compute_walls_interations(boids, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
+
+
+def propagate(boids: np.ndarray, dt: float, velocity_range: np.array):
+    """
+    Пересчет скоростей за время dt
+    """
+    boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
+    vclip(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
+    boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
