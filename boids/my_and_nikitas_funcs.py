@@ -170,13 +170,12 @@ def flocking(boids: np.ndarray,
     """
     for i in prange(boids.shape[0]):
 
-        perception_radius = 1 / 30.0
         D = compute_distance(boids, i)
 
         mask_alignment = D < perception_radius
         mask_separation = D < perception_radius / 2
-        mask_cohesion = D < perception_radius / 2
-        # mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
+        # mask_cohesion = D < perception_radius / 2
+        mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
 
         mask_separation[i] = False
         mask_alignment[i] = False
