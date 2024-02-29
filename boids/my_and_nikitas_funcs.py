@@ -10,37 +10,6 @@ def get_normal_vec(vec: np.array) -> np.array:
     return vec_rotated
 
 
-# @njit
-# def clip_array(array: np.ndarray, range: np.ndarray) -> np.ndarray:
-#     min_magnitude, max_magnitude = range
-#     norm = njit_norm_axis1(array)
-#     mask_max = norm > max_magnitude
-#     mask_min = norm < min_magnitude
-#     new_array = array.copy()
-#     if np.any(mask_max):
-#         new_array[mask_max] = (array[mask_max] / njit_norm_axis1(array[mask_max]).reshape(-1, 1)) * max_magnitude
-#
-#     if np.any(mask_min):
-#         new_array[mask_min] = (array[mask_min] / njit_norm_axis1(array[mask_min]).reshape(-1, 1)) * min_magnitude
-#
-#     return new_array
-
-
-# @njit
-# def clip_vector(vector: np.ndarray, range: np.ndarray) -> np.ndarray:
-#     min_magnitude, max_magnitude = range
-#     norm = njit_norm_vector(vector)
-#     mask_max = norm > max_magnitude
-#     mask_min = norm < min_magnitude
-#     new_vector = vector.copy()
-#     if mask_max:
-#         new_vector = (vector / norm) * max_magnitude
-#
-#     if mask_min:
-#         new_vector = (vector / norm) * min_magnitude
-#     return new_vector
-
-
 def paint_arrows(arrows, boids, dt):
     arrows.set_data(arrows=directions(boids, dt))  # отрисовка стрелок
 
@@ -99,7 +68,6 @@ def compute_distance(boids: np.ndarray, i: int):
     return np.sqrt(dr[:, 0] ** 2 + dr[:, 1] ** 2)
 
 
-# @todo сравнить + мб добавить numba?
 def vclip(v: np.ndarray, velocity_range: np.array):
     """
     Если скорость выходит за разрешенные скорости, то мы обрезаем скорость
@@ -111,27 +79,23 @@ def vclip(v: np.ndarray, velocity_range: np.array):
 
 
 @njit
-def clip_vector(vec: np.array, vec_range: np.array):
-    norm = np.linalg.norm(vec)
-    if norm > vec_range[1]:
-        vec *= vec_range[1] / norm
-
-
-@njit
 def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
     """
     Steer to move towards the average position (center of mass) of local flockmates
     """
-    steering_pos = np.mean(boids[mask][:, 0:2])
-    delta_steering_pos = steering_pos - boids[id][0:2]
-    delta_steering_pos = delta_steering_pos / np.linalg.norm(delta_steering_pos)
-    delta_steering_pos *= config.max_speed_magnitude
-    delta_steering_v = delta_steering_pos - boids[id, 2:4]
-    if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
-        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-        delta_steering_v *= config.max_delta_velocity_magnitude
-    return delta_steering_v
-
+    if boids[mask].shape[0] > 1:
+        steering_pos = np.sum(boids[mask][:, 0:2], axis=0)
+        steering_pos /= boids[mask].shape[0]
+        delta_steering_pos = steering_pos - boids[id][0:2]
+        delta_steering_pos /= np.linalg.norm(delta_steering_pos)
+        delta_steering_pos *= config.max_speed_magnitude
+        delta_steering_v = delta_steering_pos - boids[id, 2:4]
+        if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+            delta_steering_v /= np.linalg.norm(delta_steering_v)
+            delta_steering_v *= config.max_delta_velocity_magnitude
+        return delta_steering_v
+    else:
+        return np.zeros(2)
 
 @njit
 def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
@@ -206,17 +170,20 @@ def flocking(boids: np.ndarray,
     """
     for i in prange(boids.shape[0]):
 
-        a_separation = np.zeros(2)
-        a_cohesion = np.zeros(2)
-        a_alignment = np.zeros(2)
-
+        perception_radius = 1 / 30.0
         D = compute_distance(boids, i)
 
         mask_alignment = D < perception_radius
         mask_separation = D < perception_radius / 2
-        mask_cohesion = np.logical_xor(mask_alignment, mask_separation)
+        mask_cohesion = D < perception_radius / 2
+        # mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
+
         mask_separation[i] = False
         mask_alignment[i] = False
+
+        a_separation = np.zeros(2)
+        a_cohesion = np.zeros(2)
+        a_alignment = np.zeros(2)
 
         if np.any(mask_cohesion):
             a_cohesion = compute_cohesion(boids, i, mask_cohesion)
