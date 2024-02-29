@@ -108,7 +108,7 @@ class BoidsSimulation(QMainWindow):
         self.alignment_slider.valueChanged.connect(self.alignment_change)
 
         self.perception_radius_slider.setRange(config.perception_radius_range[0], config.perception_radius_range[1])
-        self.perception_radius_slider.setValue(int(self.perception_radius * config.slider_multiplier))
+        self.perception_radius_slider.setValue(int((1 / self.perception_radius) * config.slider_multiplier))
         self.perception_radius_slider.valueChanged.connect(self.perception_radius_change)
 
         # установка в layout
