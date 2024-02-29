@@ -164,18 +164,18 @@ def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
 @njit
 def compute_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float):
     mask[id] = False
-
-    new_mask = np.empty(boids.shape[0])
-    new_mask[:] = False
+    alpha_radians = np.radians(alpha)
 
     this_v = boids[id, 2:4]
     dr = boids[mask][:, 0:2] - boids[id, 0:2]
 
     cos = np.empty(dr.shape[0])
-    for k in range(dr.shape[0]):
-        cos[k] = np.dot(this_v, dr[k]) / (np.linalg.norm(dr[k]) * np.linalg.norm(this_v))
+    for j in range(dr.shape[0]):
+        cos[j] = np.dot(this_v, dr[j]) / (np.linalg.norm(dr[j]) * np.linalg.norm(this_v))
     angle = np.arccos(cos)
-    new_mask[mask] = angle < np.radians(alpha)
+
+    new_mask = np.full(boids.shape[0], False)
+    new_mask[mask] = angle < alpha_radians
     new_mask[id] = True
 
     mask[id] = True
@@ -200,7 +200,7 @@ def flocking(boids: np.ndarray,
         mask_separation = D < perception_radius / 2
         mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
 
-        mask_sector = mask_in_perseption_radius
+        # mask_sector = mask_in_perseption_radius
         alpha = 30.0
         mask_sector = compute_mask_sector(boids, mask_in_perseption_radius, i, alpha)
         mask_alignment = np.logical_and(mask_alignment, mask_sector)
