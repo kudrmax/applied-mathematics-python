@@ -52,18 +52,22 @@ class BoidsSimulation(QMainWindow):
         self.main_characters_boids = self.boids[0:1]
         self.main_characters_boids_in_visual_range = np.empty(self.main_characters_boids.shape[0])
 
-        self.grid = np.full((
+        self.grid = np.empty((
             int(self.size[0] // (2 * self.perception_radius)) + 2,
             int(self.size[1] // (2 * self.perception_radius)) + 2,
             self.N
-        ), fill_value=False, dtype=bool)
+        ), dtype=int)
 
         self.indexes_in_grid = (self.boids[:, 0:2] // (2 * self.perception_radius)).astype(int)
+
+        self.grid_size = np.zeros((self.grid.shape[0], self.grid.shape[1]), dtype=int)
 
         for i in range(self.indexes_in_grid.shape[0]):
             row = self.indexes_in_grid[i][0]
             col = self.indexes_in_grid[i][1]
-            self.grid[row, col][i] = True
+            index = self.grid_size[row, col]
+            self.grid[row, col][index] = i
+            self.grid_size[row, col] += 1
 
         # canvas
         self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H))  # создаем сцену
@@ -79,11 +83,11 @@ class BoidsSimulation(QMainWindow):
                                       arrow_size=10,
                                       connect='segments',
                                       parent=self.view.scene)
-        self.blue_arrows = scene.Arrow(
-            arrow_color=(0, 1, 0, 1),
-            arrow_size=7.5,
-            connect='segments',
-            parent=self.view.scene)
+        # self.blue_arrows = scene.Arrow(
+        #     arrow_color=(0, 1, 0, 1),
+        #     arrow_size=7.5,
+        #     connect='segments',
+        #     parent=self.view.scene)
 
         # слайдеры
         self.create_sliders(layout, self.W, self.H)
@@ -185,18 +189,19 @@ class BoidsSimulation(QMainWindow):
     def update(self):
         start_time = time.time()  # начало отсчета времени
         coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
-        neighbours = flocking(self.boids, self.perception_radius, coeffs_for_numba,
-                              config.size, self.indexes_in_grid, self.grid)  # пересчет ускорений (взаимодействие между птицами)
-        propagate(self.boids, self.delta_time, config.velocity_range, self.grid, self.indexes_in_grid, self.perception_radius)  # пересчет скоростей на основе ускорений
+        # neighbours =
+        flocking(self.boids, self.perception_radius, coeffs_for_numba, config.size, self.indexes_in_grid, self.grid, self.grid_size)  # пересчет ускорений (взаимодействие между птицами)
+        propagate(self.boids, self.delta_time, config.velocity_range, self.grid, self.indexes_in_grid, self.perception_radius, self.grid_size)  # пересчет скоростей на основе ускорений
         # paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
         self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
         self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
-        self.blue_arrows.set_data(arrows=directions(neighbours, self.delta_time))  # отрисовка стрелок
+        # self.blue_arrows.set_data(arrows=directions(neighbours, self.delta_time))  # отрисовка стрелок
         self.canvas.update()  # отображение
 
         # time.sleep(0.05) # строка для проверки того, что игра FPS независимая
         end_time = time.time()  # конец отсчета времени
         self.delta_time = end_time - start_time
+        # self.delta_time = 0.01
 
 
 if __name__ == '__main__':
