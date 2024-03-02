@@ -182,14 +182,24 @@ def compute_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float
 def flocking(boids: np.ndarray,
              perception_radius: float,
              coeff: np.array,
-             screen_size: np.array):
+             screen_size: np.array,
+             mask_grid: np.ndarray,
+             get_grid_position: np.array):
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
     neighbours = np.full(boids.shape[0], False)
     for i in prange(boids.shape[0]):
 
-        D = compute_distance(boids, i)
+        grid_position = get_grid_position[i]
+        row = grid_position[0]
+        col = grid_position[1]
+        # print('grid_position = ', grid_position)
+        # print('mask_grid[row, col].shape = ', mask_grid[row, col].shape)
+        # print('mask_grid[row, col] = ', mask_grid[row, col])
+        D = compute_distance(boids[mask_grid[row, col]], i)
+
+        # D = compute_distance(boids, i)
 
         mask_in_perseption_radius = D < perception_radius
 
@@ -234,10 +244,16 @@ def flocking(boids: np.ndarray,
     compute_walls_interations(boids, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
     return boids[neighbours]
 
-def propagate(boids: np.ndarray, dt: float, velocity_range: np.array):
+def propagate(boids: np.ndarray, dt: float, velocity_range: np.array, get_grid_position: np.ndarray, size: np.array, count):
     """
     Пересчет скоростей за время dt
     """
     boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
     vclip(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
+
+    # boids[0, 0:2] = [1.4, 1]
+    # get_grid_position[:, ] = boids[:, 0:2] // radius
+    get_grid_position[:, 0] = boids[:, 0] * count[0] // size[0]
+    get_grid_position[:, 1] = boids[:, 1] * count[1] // size[1]
+    # print('get_grid_position', get_grid_position[0])
