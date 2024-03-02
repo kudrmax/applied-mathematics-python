@@ -59,9 +59,11 @@ def directions(boids: np.ndarray, dt: float):
 
 
 @njit
-def compute_distance(boids: np.ndarray, i: int):
-    dr = boids[i, 0:2] - boids[:, 0:2]
-    return np.sqrt(dr[:, 0] ** 2 + dr[:, 1] ** 2)
+def compute_distance(boids: np.ndarray, i: int, mask_grid):
+    arr = np.full(boids.shape[0], fill_value=np.inf, dtype=float)
+    dr = boids[i, 0:2] - boids[mask_grid][:, 0:2]
+    arr[mask_grid] = np.sqrt(dr[:, 0] ** 2 + dr[:, 1] ** 2)
+    return arr
 
 
 def vclip(v: np.ndarray, velocity_range: np.array):
@@ -136,9 +138,7 @@ def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
 
     for i in prange(boids.shape[0]):
         if mask_walls[0][i]:
-            print('before', boids[i][3])
             boids[i][3] = -boids[i][3]
-            print('after', boids[i][3])
             boids[i][1] = screen_size[1] - 0.001
 
         if mask_walls[1][i]:
@@ -191,10 +191,14 @@ def flocking(boids: np.ndarray,
     neighbours = np.full(boids.shape[0], False)
     for i in prange(boids.shape[0]):
 
+        # print('grid', grid)
         pos_in_grid = indexes_in_grid[i]
+        # print('pos_in_grid', pos_in_grid)
         mask_grid = grid[pos_in_grid[0], pos_in_grid[1]]
-        # print(mask_grid)
-        D = compute_distance(boids[mask_grid], i)
+        # print('mask_grid', mask_grid.shape)
+        # print(boids[mask_grid])
+
+        D = compute_distance(boids, i, mask_grid)
 
         # D = compute_distance(boids, i)
 
@@ -245,35 +249,17 @@ def propagate(boids: np.ndarray, dt: float, velocity_range: np.array, grid: np.n
     """
     Пересчет скоростей за время dt
     """
-    # print(indexes_in_grid)
     indexes_in_grid[:] = boids[:, 0:2] // (2 * perception_radius)
     indexes_in_grid[indexes_in_grid < 0] = 0.0
-    # print(indexes_in_grid)
     grid[:, :] = False
-    # print(grid.shape)
-    # print(indexes_in_grid.shape)
-    print('boids max0: ', np.max(boids[:, 0]))
-    print('boids max1: ', np.max(boids[:, 1]))
     indexes_in_grid = (boids[:, 0:2] // (2 * perception_radius)).astype(int)
-    print('grid.shape', grid.shape)
-    print('indexes_in_grid.shape', indexes_in_grid.shape)
-    print('max0: ', np.max(indexes_in_grid[:][0]))
-    print('max1: ', np.max(indexes_in_grid[:][1]))
     for i in range(indexes_in_grid.shape[0]):
         row = indexes_in_grid[i][0]
         col = indexes_in_grid[i][1]
         grid[row, col][i] = True
 
     boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
-
-    print('boids max0: ', np.max(boids[:, 0]))
-    print('boids max1: ', np.max(boids[:, 1]))
-
     vclip(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
-
-    print('boids max0: ', np.max(boids[:, 0]))
-    print('boids max1: ', np.max(boids[:, 1]))
-
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
 
 

@@ -58,13 +58,8 @@ class BoidsSimulation(QMainWindow):
             self.N
         ), fill_value=False, dtype=bool)
 
-        print('grid.shape', self.grid.shape)
-
         self.indexes_in_grid = (self.boids[:, 0:2] // (2 * self.perception_radius)).astype(int)
-        print('max0: ', np.max(self.indexes_in_grid[:][0]))
-        print('max1: ', np.min(self.indexes_in_grid[:][1]))
-        # for pair in self.indexes_in_grid:
-        #     print(pair)
+
         for i in range(self.indexes_in_grid.shape[0]):
             row = self.indexes_in_grid[i][0]
             col = self.indexes_in_grid[i][1]
@@ -192,7 +187,6 @@ class BoidsSimulation(QMainWindow):
         coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
         neighbours = flocking(self.boids, self.perception_radius, coeffs_for_numba,
                               config.size, self.indexes_in_grid, self.grid)  # пересчет ускорений (взаимодействие между птицами)
-        print('size', self.size)
         propagate(self.boids, self.delta_time, config.velocity_range, self.grid, self.indexes_in_grid, self.perception_radius)  # пересчет скоростей на основе ускорений
         # paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
         self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
