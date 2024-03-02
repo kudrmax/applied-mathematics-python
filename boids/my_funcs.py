@@ -136,7 +136,9 @@ def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
 
     for i in prange(boids.shape[0]):
         if mask_walls[0][i]:
+            print('before', boids[i][3])
             boids[i][3] = -boids[i][3]
+            print('after', boids[i][3])
             boids[i][1] = screen_size[1] - 0.001
 
         if mask_walls[1][i]:
@@ -182,14 +184,19 @@ def compute_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float
 def flocking(boids: np.ndarray,
              perception_radius: float,
              coeff: np.array,
-             screen_size: np.array):
+             screen_size: np.array, indexes_in_grid, grid):
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
     neighbours = np.full(boids.shape[0], False)
     for i in prange(boids.shape[0]):
 
-        D = compute_distance(boids, i)
+        pos_in_grid = indexes_in_grid[i]
+        mask_grid = grid[pos_in_grid[0], pos_in_grid[1]]
+        # print(mask_grid)
+        D = compute_distance(boids[mask_grid], i)
+
+        # D = compute_distance(boids, i)
 
         mask_in_perseption_radius = D < perception_radius
 
@@ -234,10 +241,41 @@ def flocking(boids: np.ndarray,
     compute_walls_interations(boids, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
     return boids[neighbours]
 
-def propagate(boids: np.ndarray, dt: float, velocity_range: np.array):
+def propagate(boids: np.ndarray, dt: float, velocity_range: np.array, grid: np.ndarray, indexes_in_grid: np.ndarray, perception_radius: int):
     """
     Пересчет скоростей за время dt
     """
+    # print(indexes_in_grid)
+    indexes_in_grid[:] = boids[:, 0:2] // (2 * perception_radius)
+    indexes_in_grid[indexes_in_grid < 0] = 0.0
+    # print(indexes_in_grid)
+    grid[:, :] = False
+    # print(grid.shape)
+    # print(indexes_in_grid.shape)
+    print('boids max0: ', np.max(boids[:, 0]))
+    print('boids max1: ', np.max(boids[:, 1]))
+    indexes_in_grid = (boids[:, 0:2] // (2 * perception_radius)).astype(int)
+    print('grid.shape', grid.shape)
+    print('indexes_in_grid.shape', indexes_in_grid.shape)
+    print('max0: ', np.max(indexes_in_grid[:][0]))
+    print('max1: ', np.max(indexes_in_grid[:][1]))
+    for i in range(indexes_in_grid.shape[0]):
+        row = indexes_in_grid[i][0]
+        col = indexes_in_grid[i][1]
+        grid[row, col][i] = True
+
     boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
+
+    print('boids max0: ', np.max(boids[:, 0]))
+    print('boids max1: ', np.max(boids[:, 1]))
+
     vclip(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
+
+    print('boids max0: ', np.max(boids[:, 0]))
+    print('boids max1: ', np.max(boids[:, 1]))
+
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
+
+
+
+

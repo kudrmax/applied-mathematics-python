@@ -52,6 +52,24 @@ class BoidsSimulation(QMainWindow):
         self.main_characters_boids = self.boids[0:1]
         self.main_characters_boids_in_visual_range = np.empty(self.main_characters_boids.shape[0])
 
+        self.grid = np.full((
+            int(self.size[0] // (2 * self.perception_radius)) + 2,
+            int(self.size[1] // (2 * self.perception_radius)) + 2,
+            self.N
+        ), fill_value=False, dtype=bool)
+
+        print('grid.shape', self.grid.shape)
+
+        self.indexes_in_grid = (self.boids[:, 0:2] // (2 * self.perception_radius)).astype(int)
+        print('max0: ', np.max(self.indexes_in_grid[:][0]))
+        print('max1: ', np.min(self.indexes_in_grid[:][1]))
+        # for pair in self.indexes_in_grid:
+        #     print(pair)
+        for i in range(self.indexes_in_grid.shape[0]):
+            row = self.indexes_in_grid[i][0]
+            col = self.indexes_in_grid[i][1]
+            self.grid[row, col][i] = True
+
         # canvas
         self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H))  # создаем сцену
         self.view = self.canvas.central_widget.add_view()
@@ -62,15 +80,15 @@ class BoidsSimulation(QMainWindow):
                                   connect='segments',
                                   parent=self.view.scene)
         self.red_arrows = scene.Arrow(arrows=directions(self.boids[0:1], self.delta_time),
-                                  arrow_color=(1, 0, 0, 1),
-                                  arrow_size=10,
-                                  connect='segments',
-                                  parent=self.view.scene)
+                                      arrow_color=(1, 0, 0, 1),
+                                      arrow_size=10,
+                                      connect='segments',
+                                      parent=self.view.scene)
         self.blue_arrows = scene.Arrow(
-                                  arrow_color=(0, 1, 0, 1),
-                                  arrow_size=7.5,
-                                  connect='segments',
-                                  parent=self.view.scene)
+            arrow_color=(0, 1, 0, 1),
+            arrow_size=7.5,
+            connect='segments',
+            parent=self.view.scene)
 
         # слайдеры
         self.create_sliders(layout, self.W, self.H)
@@ -82,7 +100,6 @@ class BoidsSimulation(QMainWindow):
         self.timer.start()
 
     def create_sliders(self, layout, width, height):
-
         # отобразить инфо на слайдерах
 
         self.cohesion_label = QLabel(self)
@@ -174,8 +191,9 @@ class BoidsSimulation(QMainWindow):
         start_time = time.time()  # начало отсчета времени
         coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
         neighbours = flocking(self.boids, self.perception_radius, coeffs_for_numba,
-                 config.size)  # пересчет ускорений (взаимодействие между птицами)
-        propagate(self.boids, self.delta_time, config.velocity_range)  # пересчет скоростей на основе ускорений
+                              config.size, self.indexes_in_grid, self.grid)  # пересчет ускорений (взаимодействие между птицами)
+        print('size', self.size)
+        propagate(self.boids, self.delta_time, config.velocity_range, self.grid, self.indexes_in_grid, self.perception_radius)  # пересчет скоростей на основе ускорений
         # paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
         self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
         self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
