@@ -27,6 +27,8 @@ def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0
     boids[:, 2] = v * np.cos(alpha)  # координата x
     boids[:, 3] = v * np.sin(alpha)  # координата y
 
+    boids[0][2:4] = [*velocity_range]
+
 
 def directions(boids: np.ndarray, dt: float):
     """
@@ -273,15 +275,11 @@ def flocking(boids: np.ndarray,
     compute_walls_interations(boids, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
     # return boids[neighbours]
 
-def propagate(boids: np.ndarray, dt: float, velocity_range: np.array, grid: np.ndarray, indexes_in_grid: np.ndarray, perception_radius: int, grid_size):
-    """
-    Пересчет скоростей за время dt
-    """
-    indexes_in_grid[:] = boids[:, 0:2] // (2 * perception_radius)
-    indexes_in_grid[indexes_in_grid < 0] = 0.0
 
-    grid_size[:] = np.zeros((grid.shape[0], grid.shape[1]), dtype=int)
-
+# @njit(parallel=True)
+def calculate_grid(boids, grid, grid_size, indexes_in_grid, cell_size):
+    indexes_in_grid[:] = boids[:, 0:2] // cell_size
+    grid_size[:] = 0
     for i in range(indexes_in_grid.shape[0]):
         row = indexes_in_grid[i][0]
         col = indexes_in_grid[i][1]
@@ -289,13 +287,11 @@ def propagate(boids: np.ndarray, dt: float, velocity_range: np.array, grid: np.n
         grid[row, col][index] = i
         grid_size[row, col] += 1
 
-    # grid[:, :] = False
-    # indexes_in_grid = (boids[:, 0:2] // (2 * perception_radius)).astype(int)
-    # for i in range(indexes_in_grid.shape[0]):
-    #     row = indexes_in_grid[i][0]
-    #     col = indexes_in_grid[i][1]
-    #     grid[row, col][i] = True
 
+def propagate(boids: np.ndarray, dt: float, velocity_range: np.array, grid: np.ndarray, indexes_in_grid: np.ndarray, perception_radius: int, grid_size):
+    """
+    Пересчет скоростей за время dt
+    """
     boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
     vclip(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt

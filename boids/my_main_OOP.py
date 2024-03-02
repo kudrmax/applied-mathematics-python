@@ -1,4 +1,7 @@
 import time
+
+import numpy as np
+
 from my_funcs import *
 import config as config
 
@@ -18,6 +21,9 @@ class BoidsSimulation(QMainWindow):
         # слайдеры
 
         # self.wall_bounce_checkbox = None
+
+        # self.r_vecs = np.zeros((100, 2), dtype=float)
+        # self.count = 0
 
         self.cohesion_slider = None
         self.separation_slider = None
@@ -42,7 +48,7 @@ class BoidsSimulation(QMainWindow):
         self.size = config.size
         self.perception_radius = config.perception_radius
         self.velocity_range = config.velocity_range
-        self.acceleration_range = config.acceleration_range
+        # self.acceleration_range = config.acceleration_range
         self.max_speed_magnitude = config.max_speed_magnitude
         self.max_delta_velocity_magnitude = config.max_delta_velocity_magnitude
 
@@ -50,7 +56,6 @@ class BoidsSimulation(QMainWindow):
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
         self.main_characters_boids = self.boids[0:1]
-        self.main_characters_boids_in_visual_range = np.empty(self.main_characters_boids.shape[0])
 
         self.grid = np.empty((
             int(self.size[0] // (2 * self.perception_radius)) + 2,
@@ -74,7 +79,7 @@ class BoidsSimulation(QMainWindow):
         self.view = self.canvas.central_widget.add_view()
         self.view.camera = scene.PanZoomCamera(rect=Rect(0, 0, self.size[0], self.size[1]))
         self.arrows = scene.Arrow(arrows=directions(self.boids, self.delta_time),
-                                  arrow_color=(1, 1, 1, 1),
+                                  arrow_color=(1, 1, 1, 0.9),
                                   arrow_size=5,
                                   connect='segments',
                                   parent=self.view.scene)
@@ -191,17 +196,23 @@ class BoidsSimulation(QMainWindow):
         coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
         # neighbours =
         flocking(self.boids, self.perception_radius, coeffs_for_numba, config.size, self.indexes_in_grid, self.grid, self.grid_size)  # пересчет ускорений (взаимодействие между птицами)
+        calculate_grid(self.boids, self.grid, self.grid_size, self.indexes_in_grid, 2 * self.perception_radius)
         propagate(self.boids, self.delta_time, config.velocity_range, self.grid, self.indexes_in_grid, self.perception_radius, self.grid_size)  # пересчет скоростей на основе ускорений
-        # paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
         self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
         self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
         # self.blue_arrows.set_data(arrows=directions(neighbours, self.delta_time))  # отрисовка стрелок
         self.canvas.update()  # отображение
 
+        # self.r_vecs[self.count] = self.boids[0, 0:2]
+        # self.count += 1
+        # if (self.count == 20):
+        #     arr = np.array(self.r_vecs)
+        #     dr = arr[1:self.count] - arr[:self.count-1]
+        #     print('MEAN = ', np.mean(np.linalg.norm(dr, axis=1)))
+
         # time.sleep(0.05) # строка для проверки того, что игра FPS независимая
         end_time = time.time()  # конец отсчета времени
         self.delta_time = end_time - start_time
-        # self.delta_time = 0.01
 
 
 if __name__ == '__main__':
