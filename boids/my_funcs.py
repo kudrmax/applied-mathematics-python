@@ -150,7 +150,7 @@ def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
 
 
 @njit
-def compute_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float):
+def get_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float):
     """
     Вычисление макси сектора
     """
@@ -171,6 +171,28 @@ def compute_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float
 
     mask[id] = True
     return new_mask
+
+
+def get_quarter(boids, cell_size):
+    coords = boids[:, 0:2]
+    coords_in_cell = coords[:] % cell_size
+    x_quarters = coords_in_cell[:, 0] >= cell_size / 2
+    y_quarters = coords_in_cell[:, 1] >= cell_size / 2
+
+    quarters = np.empty(boids.shape[0], dtype=int)
+    for i in range(x_quarters.shape[0]):
+        x_quarter = x_quarters[i]
+        y_quarter = y_quarters[i]
+        if x_quarter and y_quarter:
+            quarters[i] = 1
+        elif not x_quarter and y_quarter:
+            quarters[i] = 2
+        elif not x_quarter and not y_quarter:
+            quarters[i] = 2
+        elif x_quarter and not y_quarter:
+            quarters[i] = 4
+
+    return quarters
 
 
 # @njit(parallel=True)
@@ -197,12 +219,27 @@ def calculate_grid(boids, grid, grid_size, indexes_in_grid, cell_size):
         grid[row, col][index] = i
         grid_size[row, col] += 1
 
+@njit
+def get_mask_grid(grid, grid_size, indexes_in_grid, id):
+    row, col = indexes_in_grid[id]
+    mask_grid = grid[row, col][:grid_size[row, col]]
+    return mask_grid
+
+@njit
+def get_index(mask_grid, id):
+    # определение индекса боида в новом массиве boids_nearby
+    i_nearby = 0
+    for j in range(len(mask_grid)):
+        if id == mask_grid[j]:
+            i_nearby = j
+    return i_nearby
+
 
 @njit(parallel=True)
 def calculate_acceleration(boids: np.ndarray,
                            perception_radius: float,
                            coeff: np.array,
-                           screen_size: np.array, indexes_in_grid, grid, grid_size):
+                           screen_size: np.array, indexes_in_grid: np.array, grid: np.array, grid_size: np.array):
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
@@ -211,22 +248,17 @@ def calculate_acceleration(boids: np.ndarray,
     for i in prange(boids.shape[0]):
 
         # создание макси для боидов, находящихся рядом
-        row, col = indexes_in_grid[i]
-        mask_grid = grid[row, col][:grid_size[row, col]]
-        boids_nearby = boids[mask_grid]  # боидсы, которые находятся рядом
 
-        # определение индекса боида в новом массиве boids_nearby
-        i_nearby = 0
-        for j in range(len(mask_grid)):
-            if i == mask_grid[j]:
-                i_nearby = j
+        mask_grid = get_mask_grid(grid, grid_size, indexes_in_grid, i)
+        boids_nearby = boids[mask_grid]  # боидсы, которые находятся рядом
+        i_nearby = get_index(mask_grid, i)
 
         # расстояния и маски расстояний
         D = compute_distance(boids_nearby, i_nearby)
         mask_in_perception_radius = D < perception_radius
 
         mask_sector = mask_in_perception_radius
-        # mask_sector = compute_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=30.0)
+        # mask_sector = get_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=30.0)
         mask_alignment = np.logical_and(mask_in_perception_radius, mask_sector)
         mask_separation = np.logical_and(D < perception_radius / 2.0, mask_sector)
         mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
