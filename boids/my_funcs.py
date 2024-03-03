@@ -197,67 +197,12 @@ def calculate_grid(boids, grid, grid_size, indexes_in_grid, cell_size):
         grid[row, col][index] = i
         grid_size[row, col] += 1
 
-
-@njit
-def get_quarter(boids, cell_size, id):
-    coords = boids[id, 0:2]
-    coords_in_cell = coords % cell_size
-    x_quarter = coords_in_cell[0] >= cell_size / 2
-    y_quarter = coords_in_cell[1] >= cell_size / 2
-
-    quarter = 0
-    if x_quarter and y_quarter:
-        quarter = 1
-    elif not x_quarter and y_quarter:
-        quarter = 2
-    elif not x_quarter and not y_quarter:
-        quarter = 2
-    elif x_quarter and not y_quarter:
-        quarter = 4
-
-    return quarter
-
-
-@njit
-def get_mask_grid_with_quoters(boids, grid, grid_size, indexes_in_grid, cell_size, id):
-    quoter = get_quarter(boids, cell_size, id)
-    row, col = indexes_in_grid[id]
-
-    cells = np.empty(shape=(4, 2), dtype=np.int64)
-    cells[0] = np.array([row, col])
-
-    delta_x, delta_y = 0, 0
-    if quoter == 1:
-        delta_x = 0
-        delta_y = 0
-    elif quoter == 1:
-        delta_x = -1
-        delta_y = 0
-    elif quoter == 1:
-        delta_x = -1
-        delta_y = 1
-    elif quoter == 1:
-        delta_x = 0
-        delta_y = 1
-    cells[1] = np.array([row - 1 + delta_y, col + delta_x])
-    cells[2] = np.array([row - 1 + delta_y, col + 1 + delta_x])
-    cells[3] = np.array([row + delta_y, col + 1 + delta_x])
-
-    mask_grid0 = grid[row, col][:grid_size[row, col]]
-    row, col = cells[1]
-    mask_grid1 = grid[row, col][:grid_size[row, col]]
-    row, col = cells[2]
-    mask_grid2 = grid[row, col][:grid_size[row, col]]
-    row, col = cells[3]
-    mask_grid3 = grid[row, col][:grid_size[row, col]]
-    mask_grid = np.array([*mask_grid0, *mask_grid1, *mask_grid2, *mask_grid3])
-    # print(cells)
-    # print(quoter)
-    return mask_grid
-
-
 @njit
 def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
+    """
+    Получение маски на освнове grid
+    """
+
     row, col = indexes_in_grid[id]
     cells = np.empty(shape=(9, 2), dtype=np.int64)
     for i in range(-1, 2, 1):
@@ -304,7 +249,9 @@ def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
 
 @njit
 def get_index(mask_grid, id):
-    # определение индекса боида в новом массиве boids_nearby
+    """
+    Определение индекса боида в новом массиве boids_nearby
+    """
     i_nearby = 0
     for j in range(len(mask_grid)):
         if id == mask_grid[j]:
