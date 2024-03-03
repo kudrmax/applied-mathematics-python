@@ -47,6 +47,7 @@ class BoidsSimulation(QMainWindow):
         self.velocity_range = config.velocity_range
         self.max_speed_magnitude = config.max_speed_magnitude
         self.max_acceleration_magnitude = config.max_acceleration_magnitude
+        self.alpha = config.alpha // 2
 
         # boids
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
@@ -54,6 +55,7 @@ class BoidsSimulation(QMainWindow):
         self.main_characters_boids = self.boids[0:1]
         self.neighbours_of_main_characters = np.empty(self.N, dtype=int)
         self.neighbours_of_main_characters_size = np.array([0], dtype=int)
+        print('boids end')
 
         # grid
         self.cell_size = 2 * self.perception_radius
@@ -62,9 +64,12 @@ class BoidsSimulation(QMainWindow):
             int(self.size[1] // self.cell_size) + 1,
             self.N
         ), dtype=int)
+        print('indexes_in_grid start')
         self.indexes_in_grid = np.empty(shape=(self.boids.shape[0], 2), dtype=int)
+        print('indexes_in_grid end')
         self.grid_size = np.empty((self.grid.shape[0], self.grid.shape[1]), dtype=int)
         calculate_grid(self.boids, self.grid, self.grid_size, self.indexes_in_grid, self.cell_size)
+        print('grid end')
 
         # canvas
         self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H))  # создаем сцену
@@ -207,7 +212,8 @@ class BoidsSimulation(QMainWindow):
             self.grid_size,
             self.cell_size,
             self.neighbours_of_main_characters,
-            self.neighbours_of_main_characters_size
+            self.neighbours_of_main_characters_size,
+            self.alpha
         )
         # print(self.neighbours_of_main_characters_size)
         # print(self.neighbours_of_main_characters[:self.neighbours_of_main_characters_size[0]])

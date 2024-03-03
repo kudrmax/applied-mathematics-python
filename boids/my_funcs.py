@@ -14,6 +14,7 @@ def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0
     """
     Функция, отвечающая за создание птиц
     """
+    print('init start')
     n = boids.shape[0]
     rng = np.random.default_rng()
 
@@ -28,6 +29,7 @@ def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0
     boids[:, 3] = v * np.sin(alpha)  # координата y
 
     boids[0][2:4] = [*velocity_range]
+    print('init end')
 
 
 def directions(boids: np.ndarray, dt: float):
@@ -283,7 +285,8 @@ def calculate_acceleration(boids: np.ndarray,
                            screen_size: np.array, indexes_in_grid: np.array, grid: np.array, grid_size: np.array,
                            cell_size,
                            neighbours_of_main_characters,
-                           neighbours_of_main_characters_size: np.array):
+                           neighbours_of_main_characters_size: np.array,
+                           alpha):
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
@@ -299,8 +302,8 @@ def calculate_acceleration(boids: np.ndarray,
         D = compute_distance(boids_nearby, i_nearby)
         mask_in_perception_radius = D < perception_radius
 
-        mask_sector = mask_in_perception_radius
-        # mask_sector = get_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=30.0)
+        # mask_sector = mask_in_perception_radius
+        mask_sector = get_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=alpha)
         mask_alignment = np.logical_and(mask_in_perception_radius, mask_sector)
         mask_separation = np.logical_and(D < perception_radius / 2.0, mask_sector)
         mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
