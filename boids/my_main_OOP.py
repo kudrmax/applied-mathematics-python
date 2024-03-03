@@ -192,7 +192,8 @@ class BoidsSimulation(QMainWindow):
                                self.size,
                                self.indexes_in_grid,
                                self.grid,
-                               self.grid_size)  # пересчет ускорений (взаимодействие между птицами)
+                               self.grid_size,
+                               self.cell_size)  # пересчет ускорений (взаимодействие между птицами)
 
         # коллизия со стенами
         compute_walls_interations(self.boids,
