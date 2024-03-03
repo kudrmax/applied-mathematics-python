@@ -13,6 +13,7 @@ slider_multiplier = 10000
 cohesion_range = (0, 0.5)
 separation_range = cohesion_range
 alignment_range = cohesion_range
+separation_from_walls_range = (0, 0.5)
 perception_radius_range = (1, 80)
 
 arrow_size = 5
@@ -27,6 +28,7 @@ coeffs = {
     'cohesion': .0,
     'separation': .0,
     'alignment': .0,
+    'separation_from_walls': .0,
 }
 
 # внутренние расчеты
@@ -36,7 +38,5 @@ size = np.array([W / H, 1])
 cohesion_range = (int(cohesion_range[0] * slider_multiplier), int(cohesion_range[1] * slider_multiplier))
 separation_range = (int(separation_range[0] * slider_multiplier), int(separation_range[1] * slider_multiplier))
 alignment_range = (int(alignment_range[0] * slider_multiplier), int(alignment_range[1] * slider_multiplier))
-perception_radius_range = (
-    int(perception_radius_range[0] * slider_multiplier),
-    int(perception_radius_range[1] * slider_multiplier)
-)
+perception_radius_range = (int(perception_radius_range[0] * slider_multiplier), int(perception_radius_range[1] * slider_multiplier))
+separation_from_walls_range = (int(separation_from_walls_range[0] * slider_multiplier), int(separation_from_walls_range[1] * slider_multiplier))

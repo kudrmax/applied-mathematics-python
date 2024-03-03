@@ -116,7 +116,7 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
 
 
 @njit(parallel=True)
-def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
+def compute_walls_collition(boids: np.ndarray, screen_size: np.array):
     """
     Расчет взаимодействия птиц со стенами
     """
@@ -197,6 +197,7 @@ def calculate_grid(boids, grid, grid_size, indexes_in_grid, cell_size):
         grid[row, col][index] = i
         grid_size[row, col] += 1
 
+
 @njit
 def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
     """
@@ -259,6 +260,22 @@ def get_index(mask_grid, id):
     return i_nearby
 
 
+@njit
+def compute_separation_from_walls(id, indexes_in_grid, grid):
+    max_col, max_row = grid.shape[0], grid.shape[1]
+    col, row = indexes_in_grid[id]
+    acceleration = np.zeros(2, dtype=float)
+    if row == 0:
+        acceleration[1] = 1
+    if row >= max_row - 2:
+        acceleration[1] = -1
+    if col == 0:
+        acceleration[0] = 1
+    if col >= max_col - 2:
+        acceleration[0] = -1
+    return acceleration
+
+
 @njit(parallel=True)
 def calculate_acceleration(boids: np.ndarray,
                            perception_radius: float,
@@ -303,11 +320,13 @@ def calculate_acceleration(boids: np.ndarray,
             a_separation = compute_separation(boids_nearby, i_nearby, mask_separation)
         if np.any(mask_alignment):
             a_alignment = compute_alignment(boids_nearby, i_nearby, mask_alignment)
+        a_separation_from_walls = compute_separation_from_walls(i, indexes_in_grid, grid)
         # noise = compute_noise(boids_nearby[i])
 
         acceleration = coeff[0] * a_cohesion \
                        + coeff[1] * a_separation \
-                       + coeff[2] * a_alignment
+                       + coeff[2] * a_alignment \
+                       + coeff[3] * a_separation_from_walls
         boids[i, 4:6] = acceleration
 
         # боиды, которые попали в зону видимости боида с индексом 0
