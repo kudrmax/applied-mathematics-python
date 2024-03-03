@@ -52,6 +52,8 @@ class BoidsSimulation(QMainWindow):
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
         self.main_characters_boids = self.boids[0:1]
+        self.neighbours_of_main_characters = np.empty(self.N, dtype=int)
+        self.neighbours_of_main_characters_size = np.array([0], dtype=int)
 
         # grid
         self.cell_size = 2 * self.perception_radius
@@ -68,21 +70,26 @@ class BoidsSimulation(QMainWindow):
         self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H))  # создаем сцену
         self.view = self.canvas.central_widget.add_view()
         self.view.camera = scene.PanZoomCamera(rect=Rect(0, 0, self.size[0], self.size[1]))
-        self.arrows = scene.Arrow(arrows=directions(self.boids, self.delta_time),
-                                  arrow_color=(1, 1, 1, 0.9),
-                                  arrow_size=5,
-                                  connect='segments',
-                                  parent=self.view.scene)
-        self.red_arrows = scene.Arrow(arrows=directions(self.boids[0:1], self.delta_time),
-                                      arrow_color=(1, 0, 0, 1),
-                                      arrow_size=10,
-                                      connect='segments',
-                                      parent=self.view.scene)
-        # self.blue_arrows = scene.Arrow(
-        #     arrow_color=(0, 1, 0, 1),
-        #     arrow_size=7.5,
-        #     connect='segments',
-        #     parent=self.view.scene)
+        self.arrows = scene.Arrow(
+            arrows=directions(self.boids, self.delta_time),
+            arrow_color=(1, 1, 1, 0.9),
+            arrow_size=5,
+            connect='segments',
+            parent=self.view.scene
+        )
+        self.red_arrows = scene.Arrow(
+            arrows=directions(self.boids[0:1], self.delta_time),
+            arrow_color=(1, 0, 0, 1),
+            arrow_size=10,
+            connect='segments',
+            parent=self.view.scene
+        )
+        self.blue_arrows = scene.Arrow(
+            arrow_color=(0, 1, 0, 1),
+            arrow_size=7.5,
+            connect='segments',
+            parent=self.view.scene
+        )
 
         # слайдеры
         self.create_sliders(layout, self.W, self.H)
@@ -130,7 +137,8 @@ class BoidsSimulation(QMainWindow):
         self.alignment_slider.setValue(int(self.coeffs["alignment"] * config.slider_multiplier))
         self.alignment_slider.valueChanged.connect(self.alignment_change)
 
-        self.separation_from_walls_slider.setRange(config.separation_from_walls_range[0], config.separation_from_walls_range[1])
+        self.separation_from_walls_slider.setRange(config.separation_from_walls_range[0],
+                                                   config.separation_from_walls_range[1])
         self.separation_from_walls_slider.setValue(int(self.coeffs["separation_from_walls"] * config.slider_multiplier))
         self.separation_from_walls_slider.valueChanged.connect(self.separation_from_walls_change)
 
@@ -176,7 +184,6 @@ class BoidsSimulation(QMainWindow):
         self.separation_from_walls_label.setText(f"Separation from walls: {value}")
         print(f"Separation from walls changed to: {value}")
 
-
     # def wall_bounce_change(self, state):
     #     if state == 2:
     #         self.wall_bounce = True
@@ -189,14 +196,22 @@ class BoidsSimulation(QMainWindow):
         start_time = time.time()
 
         # алгоритм boids (взаимодействие птиц между друг другом)
-        calculate_acceleration(self.boids,  # neighbours =
-                               self.perception_radius,
-                               np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"], self.coeffs["separation_from_walls"]]),
-                               self.size,
-                               self.indexes_in_grid,
-                               self.grid,
-                               self.grid_size,
-                               self.cell_size)  # пересчет ускорений (взаимодействие между птицами)
+        calculate_acceleration(
+            self.boids,
+            self.perception_radius,
+            np.array([self.coeffs["cohesion"], self.coeffs["separation"],
+                      self.coeffs["alignment"], self.coeffs["separation_from_walls"]]),
+            self.size,
+            self.indexes_in_grid,
+            self.grid,
+            self.grid_size,
+            self.cell_size,
+            self.neighbours_of_main_characters,
+            self.neighbours_of_main_characters_size
+        )
+        # print(self.neighbours_of_main_characters_size)
+        # print(self.neighbours_of_main_characters[:self.neighbours_of_main_characters_size[0]])
+        # print(neighbours.shape)
 
         # коллизия со стенами
         compute_walls_collition(self.boids, self.size)
@@ -220,8 +235,9 @@ class BoidsSimulation(QMainWindow):
 
         # отрисовка
         self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
+        self.blue_arrows.set_data(
+            arrows=directions(self.boids[self.neighbours_of_main_characters[:self.neighbours_of_main_characters_size[0]]], self.delta_time))  # отрисовка стрелок
         self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
-        # self.blue_arrows.set_data(arrows=directions(neighbours, self.delta_time))  # отрисовка стрелок
         self.canvas.update()  # отображение
 
         # проверка среднего расстояния @todo удалить

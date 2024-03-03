@@ -281,12 +281,12 @@ def calculate_acceleration(boids: np.ndarray,
                            perception_radius: float,
                            coeff: np.array,
                            screen_size: np.array, indexes_in_grid: np.array, grid: np.array, grid_size: np.array,
-                           cell_size):
+                           cell_size,
+                           neighbours_of_main_characters,
+                           neighbours_of_main_characters_size: np.array):
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
-    # neighbours = np.full(boids.shape[0], False)
-
     for i in prange(boids.shape[0]):
 
         # создание макси для боидов, находящихся рядом
@@ -330,12 +330,13 @@ def calculate_acceleration(boids: np.ndarray,
         boids[i, 4:6] = acceleration
 
         # боиды, которые попали в зону видимости боида с индексом 0
-        # if i == 0:
-        #     for j in range(neighbours.shape[0]):
-        #         neighbours[j] = mask_alignment[j]
-        # neighbours = mask_alignment[:]
-
-    # return boids[neighbours]
+        if i == 0:
+            count = 0
+            neighbours = mask_grid[mask_alignment]
+            for j in range(neighbours.shape[0]):
+                neighbours_of_main_characters[j] = neighbours[j]
+                count += 1
+            neighbours_of_main_characters_size[0] = count
 
 
 def calculate_velocity(boids: np.ndarray, dt: float, velocity_range: np.array):
