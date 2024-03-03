@@ -73,7 +73,7 @@ class BoidsSimulation(QMainWindow):
         print('grid end')
 
         # canvas
-        self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H))  # создаем сцену
+        self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H), resizable=False)  # создаем сцену
         self.view = self.canvas.central_widget.add_view()
         self.view.camera = scene.PanZoomCamera(rect=Rect(0, 0, self.size[0], self.size[1]))
         self.arrows = scene.Arrow(
@@ -96,9 +96,16 @@ class BoidsSimulation(QMainWindow):
             connect='segments',
             parent=self.view.scene
         )
+        self.ellipse = scene.Ellipse(
+            center=self.main_characters_boids[0][0:2],
+            radius=self.perception_radius,
+            color=(0, 0, 1, 0.3), border_width=0,
+            num_segments=100,
+            parent=self.view.scene
+        )
 
         # слайдеры
-        self.create_sliders(layout, self.W, self.H)
+        self.create_sliders(layout)
         self.setLayout(layout)
 
         # таймер
@@ -106,7 +113,7 @@ class BoidsSimulation(QMainWindow):
         self.timer.timeout.connect(self.update)
         self.timer.start()
 
-    def create_sliders(self, layout, width, height):
+    def create_sliders(self, layout):
         # отобразить инфо на слайдерах
 
         self.cohesion_label = QLabel(self)
@@ -143,7 +150,8 @@ class BoidsSimulation(QMainWindow):
         self.alignment_slider.setValue(int(self.coeffs["alignment"] * config.slider_multiplier))
         self.alignment_slider.valueChanged.connect(self.alignment_change)
 
-        self.separation_from_walls_slider.setRange(config.separation_from_walls_range[0], config.separation_from_walls_range[1])
+        self.separation_from_walls_slider.setRange(config.separation_from_walls_range[0],
+                                                   config.separation_from_walls_range[1])
         self.separation_from_walls_slider.setValue(int(self.coeffs["separation_from_walls"] * config.slider_multiplier))
         self.separation_from_walls_slider.valueChanged.connect(self.separation_from_walls_change)
 
@@ -243,9 +251,13 @@ class BoidsSimulation(QMainWindow):
         # отрисовка
         self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
         self.blue_arrows.set_data(
-            arrows=directions(self.boids[self.neighbours_of_main_characters[:self.neighbours_of_main_characters_size[0]]], self.delta_time))  # отрисовка стрелок
+            arrows=directions(
+                self.boids[self.neighbours_of_main_characters[:self.neighbours_of_main_characters_size[0]]],
+                self.delta_time))  # отрисовка стрелок
         self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
+        self.ellipse.center = self.main_characters_boids[0][0:2]
         self.canvas.update()  # отображение
+
 
         # проверка среднего расстояния @todo удалить
         # self.r_vecs[self.count] = self.boids[0, 0:2]
