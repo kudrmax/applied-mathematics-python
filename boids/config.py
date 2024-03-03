@@ -18,7 +18,7 @@ perception_radius_range = (1, 80)
 arrow_size = 5
 
 max_speed_magnitude = 4  # 4
-max_delta_velocity_magnitude = 10  # 10
+max_acceleration_magnitude = 10  # 10
 
 # max_speed_magnitude = 4 / (0.05 / 0.008)  # 4
 # max_delta_velocity_magnitude =  10 / (0.05 / 0.008) # 10
