@@ -1,4 +1,5 @@
 import time
+
 from my_funcs import *
 import config as config
 
@@ -15,6 +16,9 @@ class BoidsSimulation(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # self.r_vecs = np.zeros((100, 2), dtype=float)
+        # self.count = 0
+
         # слайдеры
 
         # self.wall_bounce_checkbox = None
@@ -29,7 +33,6 @@ class BoidsSimulation(QMainWindow):
         self.cohesion_label = None
         self.perception_radius_label = None
 
-        #
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout(self.central_widget)
@@ -42,35 +45,31 @@ class BoidsSimulation(QMainWindow):
         self.size = config.size
         self.perception_radius = config.perception_radius
         self.velocity_range = config.velocity_range
-        self.acceleration_range = config.acceleration_range
         self.max_speed_magnitude = config.max_speed_magnitude
-        self.max_delta_velocity_magnitude = config.max_delta_velocity_magnitude
+        self.max_acceleration_magnitude = config.max_acceleration_magnitude
 
         # boids
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
         self.main_characters_boids = self.boids[0:1]
-        self.main_characters_boids_in_visual_range = np.empty(self.main_characters_boids.shape[0])
 
-        self.radius = int(1 / self.perception_radius)
-        print(f'{self.radius = }')
-        self.mask_grid = np.full((self.radius // 2, int(config.size[0] * self.radius / config.size[1]) // 2 + 1, self.N), True)
-        print(f'{self.mask_grid = }')
-        print(f'{self.mask_grid.shape = }')
-        self.get_grid_position = np.empty(shape=(self.N, 2), dtype=int)
-        print(f'{self.get_grid_position = }')
-        print(f'{self.get_grid_position.shape = }')
-        self.get_grid_position[:, 0] = self.boids[:, 0] // (self.size[0] * self.perception_radius)
-        self.get_grid_position[:, 1] = self.boids[:, 1] // (self.size[1] * self.perception_radius)
-        print(f'{self.get_grid_position = }')
-        print(f'{self.get_grid_position.shape = }')
+        # grid
+        self.cell_size = 2 * self.perception_radius
+        self.grid = np.empty((
+            int(self.size[0] // self.cell_size) + 2,
+            int(self.size[1] // self.cell_size) + 2,
+            self.N
+        ), dtype=int)
+        self.indexes_in_grid = np.empty(shape=(self.boids.shape[0], 2), dtype=int)
+        self.grid_size = np.empty((self.grid.shape[0], self.grid.shape[1]), dtype=int)
+        calculate_grid(self.boids, self.grid, self.grid_size, self.indexes_in_grid, self.cell_size)
 
         # canvas
         self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H))  # создаем сцену
         self.view = self.canvas.central_widget.add_view()
         self.view.camera = scene.PanZoomCamera(rect=Rect(0, 0, self.size[0], self.size[1]))
         self.arrows = scene.Arrow(arrows=directions(self.boids, self.delta_time),
-                                  arrow_color=(1, 1, 1, 1),
+                                  arrow_color=(1, 1, 1, 0.9),
                                   arrow_size=5,
                                   connect='segments',
                                   parent=self.view.scene)
@@ -79,11 +78,11 @@ class BoidsSimulation(QMainWindow):
                                       arrow_size=10,
                                       connect='segments',
                                       parent=self.view.scene)
-        self.blue_arrows = scene.Arrow(
-            arrow_color=(0, 1, 0, 1),
-            arrow_size=7.5,
-            connect='segments',
-            parent=self.view.scene)
+        # self.blue_arrows = scene.Arrow(
+        #     arrow_color=(0, 1, 0, 1),
+        #     arrow_size=7.5,
+        #     connect='segments',
+        #     parent=self.view.scene)
 
         # слайдеры
         self.create_sliders(layout, self.W, self.H)
@@ -183,27 +182,52 @@ class BoidsSimulation(QMainWindow):
     #     print(f"Wall bounce changed to: {self.wall_bounce}")
 
     def update(self):
-        start_time = time.time()  # начало отсчета времени
-        coeffs_for_numba = np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]])
-        neighbours = flocking(self.boids,
-                              self.perception_radius,
-                              coeffs_for_numba,
-                              config.size,
-                              self.mask_grid,
-                              self.get_grid_position)  # пересчет ускорений (взаимодействие между птицами)
-        count_y = int((1 / self.perception_radius) // 2)
-        count_x = count_y * self.size[0] / self.size[1] + 1
-        count = [count_x, count_y]
-        propagate(self.boids, self.delta_time, config.velocity_range, self.get_grid_position, self.size, count)  # пересчет скоростей на основе ускорений
-        # paint_arrows(self.arrows, self.boids, self.delta_time)  # отрисовка стрелок
+        # начало отсчета времени
+        start_time = time.time()
+
+        # алгоритм boids (взаимодействие птиц между друг другом)
+        calculate_acceleration(self.boids,  # neighbours =
+                               self.perception_radius,
+                               np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"]]),
+                               self.size,
+                               self.indexes_in_grid,
+                               self.grid,
+                               self.grid_size,
+                               self.cell_size)  # пересчет ускорений (взаимодействие между птицами)
+
+        # коллизия со стенами
+        compute_walls_interations(self.boids,
+                                  self.size)
+        # пересчет сетки для подсчета расстояния
+        calculate_grid(self.boids,
+                       self.grid,
+                       self.grid_size,
+                       self.indexes_in_grid,
+                       2 * self.perception_radius)
+
+        # пересчет скоростей
+        calculate_velocity(self.boids, self.delta_time, config.velocity_range)
+
+        # пересчет позиции
+        calculate_position(self.boids, self.delta_time)
+
+        # конец отсчета времени
+        end_time = time.time()
+        self.delta_time = end_time - start_time
+
+        # отрисовка
         self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
         self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
-        self.blue_arrows.set_data(arrows=directions(neighbours, self.delta_time))  # отрисовка стрелок
+        # self.blue_arrows.set_data(arrows=directions(neighbours, self.delta_time))  # отрисовка стрелок
         self.canvas.update()  # отображение
 
-        # time.sleep(0.05) # строка для проверки того, что игра FPS независимая
-        end_time = time.time()  # конец отсчета времени
-        self.delta_time = end_time - start_time
+        # проверка среднего расстояния @todo удалить
+        # self.r_vecs[self.count] = self.boids[0, 0:2]
+        # self.count += 1
+        # if (self.count == 20):
+        #     arr = np.array(self.r_vecs)
+        #     dr = arr[1:self.count] - arr[:self.count-1]
+        #     print('MEAN = ', np.mean(np.linalg.norm(dr, axis=1)))
 
 
 if __name__ == '__main__':

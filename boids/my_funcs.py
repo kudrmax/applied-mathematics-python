@@ -27,6 +27,8 @@ def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0
     boids[:, 2] = v * np.cos(alpha)  # координата x
     boids[:, 3] = v * np.sin(alpha)  # координата y
 
+    boids[0][2:4] = [*velocity_range]
+
 
 def directions(boids: np.ndarray, dt: float):
     """
@@ -42,36 +44,23 @@ def directions(boids: np.ndarray, dt: float):
     return np.hstack((pos0, pos))
 
 
-# @njit
-# def njit_norm_axis1(vector: np.ndarray):
-#     norm = np.zeros(vector.shape[0], dtype=np.float64)
-#     for j in prange(vector.shape[0]):
-#         norm[j] = np.sqrt(vector[j, 0] * vector[j, 0] + vector[j, 1] * vector[j, 1])
-#     return norm
-#
-#
-# @njit
-# def njit_norm_vector(vector: np.ndarray):
-#     norm = 0
-#     for j in range(vector.shape[0]):
-#         norm += vector[j] * vector[j]
-#     return np.sqrt(norm)
-
-
 @njit
 def compute_distance(boids: np.ndarray, i: int):
+    """
+    Вычисление расстояний между птицами
+    """
     dr = boids[i, 0:2] - boids[:, 0:2]
     return np.sqrt(dr[:, 0] ** 2 + dr[:, 1] ** 2)
 
 
-def vclip(v: np.ndarray, velocity_range: np.array):
+def clip_vector(v: np.ndarray, vector_range: np.array):
     """
-    Если скорость выходит за разрешенные скорости, то мы обрезаем скорость
+    Обрезать вектор, если он выходит за vector_range[1]
     """
-    norm = np.linalg.norm(v, axis=1)  # модуль скорости
-    mask = norm > velocity_range[1]  # маска
+    norm = np.linalg.norm(v, axis=1)
+    mask = norm > vector_range[1]
     if np.any(mask):
-        v[mask] *= velocity_range[1] / norm[mask, None]
+        v[mask] *= vector_range[1] / norm[mask, None]
 
 
 @njit
@@ -86,9 +75,9 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
         delta_steering_pos /= np.linalg.norm(delta_steering_pos)
         delta_steering_pos *= config.max_speed_magnitude
         delta_steering_v = delta_steering_pos - boids[id, 2:4]
-        if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+        if np.linalg.norm(delta_steering_v) > config.max_acceleration_magnitude:
             delta_steering_v /= np.linalg.norm(delta_steering_v)
-            delta_steering_v *= config.max_delta_velocity_magnitude
+            delta_steering_v *= config.max_acceleration_magnitude
         return delta_steering_v
     else:
         return np.zeros(2)
@@ -100,14 +89,14 @@ def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array
     steer to avoid crowding local flockmates
     """
     dr = boids[id][0:2] - boids[mask][:, 0:2]
-    dr *= 1 / (dr[:, 0] ** 2 + dr[:, 1] ** 2)
+    dr *= 1 / ((dr[:, 0] ** 2 + dr[:, 1] ** 2) + 0.001)
     steering_pos = np.sum(dr, axis=0)
     steering_pos /= np.linalg.norm(steering_pos)
     steering_pos *= config.max_speed_magnitude
     delta_steering_v = steering_pos - boids[id, 2:4]
-    if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+    if np.linalg.norm(delta_steering_v) > config.max_acceleration_magnitude:
         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-        delta_steering_v *= config.max_delta_velocity_magnitude
+        delta_steering_v *= config.max_acceleration_magnitude
     return delta_steering_v
 
 
@@ -120,14 +109,17 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     steering_v /= np.linalg.norm(steering_v)
     steering_v *= config.max_speed_magnitude
     delta_steering_v = steering_v - boids[id][2:4]
-    if np.linalg.norm(delta_steering_v) > config.max_delta_velocity_magnitude:
+    if np.linalg.norm(delta_steering_v) > config.max_acceleration_magnitude:
         delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-        delta_steering_v *= config.max_delta_velocity_magnitude
+        delta_steering_v *= config.max_acceleration_magnitude
     return delta_steering_v
 
 
 @njit(parallel=True)
 def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
+    """
+    Расчет взаимодействия птиц со стенами
+    """
     mask_walls = np.empty((4, boids.shape[0]))
     mask_walls[0] = boids[:, 1] > screen_size[1]
     mask_walls[1] = boids[:, 0] > screen_size[0]
@@ -158,7 +150,10 @@ def compute_walls_interations(boids: np.ndarray, screen_size: np.array):
 
 
 @njit
-def compute_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float):
+def get_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float):
+    """
+    Вычисление макси сектора
+    """
     mask[id] = False
     alpha_radians = np.radians(alpha)
 
@@ -178,82 +173,162 @@ def compute_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float
     return new_mask
 
 
+# @njit(parallel=True)
+def calculate_grid(boids, grid, grid_size, indexes_in_grid, cell_size):
+    """
+    Заполнение сетки, для вычисления расстояния.
+
+    - Обновляем grid
+    - Заполняем заново indexes_in_grid
+    - Заполняем заново grid_size
+
+    Parameters
+    ----------
+    grid
+    grid_size
+    indexes_in_grid
+    cell_size
+    """
+    indexes_in_grid[:] = boids[:, 0:2] // cell_size
+    grid_size[:] = 0
+    for i in range(indexes_in_grid.shape[0]):
+        row, col = indexes_in_grid[i]
+        index = grid_size[row, col]
+        grid[row, col][index] = i
+        grid_size[row, col] += 1
+
+@njit
+def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
+    """
+    Получение маски на освнове grid
+    """
+
+    row, col = indexes_in_grid[id]
+    cells = np.empty(shape=(9, 2), dtype=np.int64)
+    for i in range(-1, 2, 1):
+        for j in range(-1, 2, 1):
+            this_row, this_col = row + i, col + j
+            if this_row >= 0 and this_col >= 0:
+                cells[(i + 1) * 3 + (j + 1)] = np.array([this_row, this_col])
+            else:
+                cells[(i + 1) * 3 + (j + 1)] = np.array([666, 666])
+
+    row, col = cells[0]
+    mask0 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[1]
+    mask1 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[2]
+    mask2 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[3]
+    mask3 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[4]
+    mask4 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[5]
+    mask5 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[6]
+    mask6 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[7]
+    mask7 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[8]
+    mask8 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+
+    mask_grid_flatten = np.array([
+        *mask0,
+        *mask1,
+        *mask2,
+        *mask3,
+        *mask4,
+        *mask5,
+        *mask6,
+        *mask7,
+        *mask8,
+    ])
+
+    return mask_grid_flatten
+
+
+@njit
+def get_index(mask_grid, id):
+    """
+    Определение индекса боида в новом массиве boids_nearby
+    """
+    i_nearby = 0
+    for j in range(len(mask_grid)):
+        if id == mask_grid[j]:
+            i_nearby = j
+    return i_nearby
+
+
 @njit(parallel=True)
-def flocking(boids: np.ndarray,
-             perception_radius: float,
-             coeff: np.array,
-             screen_size: np.array,
-             mask_grid: np.ndarray,
-             get_grid_position: np.array):
+def calculate_acceleration(boids: np.ndarray,
+                           perception_radius: float,
+                           coeff: np.array,
+                           screen_size: np.array, indexes_in_grid: np.array, grid: np.array, grid_size: np.array,
+                           cell_size):
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
-    neighbours = np.full(boids.shape[0], False)
+    # neighbours = np.full(boids.shape[0], False)
+
     for i in prange(boids.shape[0]):
 
-        grid_position = get_grid_position[i]
-        row = grid_position[0]
-        col = grid_position[1]
-        # print('grid_position = ', grid_position)
-        # print('mask_grid[row, col].shape = ', mask_grid[row, col].shape)
-        # print('mask_grid[row, col] = ', mask_grid[row, col])
-        D = compute_distance(boids[mask_grid[row, col]], i)
+        # создание макси для боидов, находящихся рядом
 
-        # D = compute_distance(boids, i)
+        mask_grid = get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, i)
+        boids_nearby = boids[mask_grid]  # боидсы, которые находятся рядом
+        i_nearby = get_index(mask_grid, i)
 
-        mask_in_perseption_radius = D < perception_radius
+        # расстояния и маски расстояний
+        D = compute_distance(boids_nearby, i_nearby)
+        mask_in_perception_radius = D < perception_radius
 
-        # mask_alignment = mask_in_perseption_radius
-        # mask_separation = D < perception_radius / 2
-        # mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
-
-        # mask_sector = mask_in_perseption_radius
-        alpha = 30.0
-        mask_sector = compute_mask_sector(boids, mask_in_perseption_radius, i, alpha)
-        mask_alignment = np.logical_and(mask_in_perseption_radius, mask_sector)
-        mask_separation = np.logical_and(D < perception_radius / 2, mask_sector)
+        mask_sector = mask_in_perception_radius
+        # mask_sector = get_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=30.0)
+        mask_alignment = np.logical_and(mask_in_perception_radius, mask_sector)
+        mask_separation = np.logical_and(D < perception_radius / 2.0, mask_sector)
         mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
-        # mask_cohesion = np.logical_and(np.logical_xor(mask_separation, mask_alignment), mask_sector)
 
-        mask_separation[i] = False
-        mask_alignment[i] = False
+        mask_separation[i_nearby] = False
+        mask_alignment[i_nearby] = False
+        mask_cohesion[i_nearby] = False
 
+        # считаем ускорения
         a_separation = np.zeros(2)
         a_cohesion = np.zeros(2)
         a_alignment = np.zeros(2)
 
         if np.any(mask_cohesion):
-            a_cohesion = compute_cohesion(boids, i, mask_cohesion)
+            a_cohesion = compute_cohesion(boids_nearby, i_nearby, mask_cohesion)
         if np.any(mask_separation):
-            a_separation = compute_separation(boids, i, mask_separation)
+            a_separation = compute_separation(boids_nearby, i_nearby, mask_separation)
         if np.any(mask_alignment):
-            a_alignment = compute_alignment(boids, i, mask_alignment)
-        # noise = compute_noise(boids[i])
+            a_alignment = compute_alignment(boids_nearby, i_nearby, mask_alignment)
+        # noise = compute_noise(boids_nearby[i])
 
         acceleration = coeff[0] * a_cohesion \
                        + coeff[1] * a_separation \
                        + coeff[2] * a_alignment
         boids[i, 4:6] = acceleration
 
-        if i == 0:
-            for j in range(neighbours.shape[0]):
-                neighbours[j] = mask_alignment[j]
-            # neighbours = mask_alignment[:]
+        # боиды, которые попали в зону видимости боида с индексом 0
+        # if i == 0:
+        #     for j in range(neighbours.shape[0]):
+        #         neighbours[j] = mask_alignment[j]
+        # neighbours = mask_alignment[:]
 
-    # коллизия
-    compute_walls_interations(boids, screen_size)  # if np.any(mask_walls, axis=0) else np.zeros(2)
-    return boids[neighbours]
+    # return boids[neighbours]
 
-def propagate(boids: np.ndarray, dt: float, velocity_range: np.array, get_grid_position: np.ndarray, size: np.array, count):
+
+def calculate_velocity(boids: np.ndarray, dt: float, velocity_range: np.array):
     """
     Пересчет скоростей за время dt
     """
     boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
-    vclip(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
-    boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
+    clip_vector(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
 
-    # boids[0, 0:2] = [1.4, 1]
-    # get_grid_position[:, ] = boids[:, 0:2] // radius
-    get_grid_position[:, 0] = boids[:, 0] * count[0] // size[0]
-    get_grid_position[:, 1] = boids[:, 1] * count[1] // size[1]
-    # print('get_grid_position', get_grid_position[0])
+
+def calculate_position(boids: np.ndarray, dt: float):
+    """
+    Пересчет позиции за время dt
+    """
+    boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
