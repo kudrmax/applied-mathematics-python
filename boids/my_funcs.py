@@ -259,21 +259,46 @@ def get_mask_grid_with_quoters(boids, grid, grid_size, indexes_in_grid, cell_siz
 @njit
 def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
     row, col = indexes_in_grid[id]
-    # cells = np.empty(shape=(9, 2), dtype=np.int64)
-    # for i in range(-1, 2, 1):
-    #     for j in range(-1, 2, 1):
-    #         this_row, this_col = row + i, col + j
-    #         if this_row >= 0 and this_col >= 0:
-    #             cells[(i + 1) * 3 + (j + 1)] = np.array([this_row, this_col])
-    #         else:
-    #             cells[(i + 1) * 3 + (j + 1)] = np.array([666, 666])
-    # for i in range(2, 3):
-    #     row, col = cells[i]
-    #     if row != 666 and col != 666:
-    #         mask_grid_flatten = grid[row, col][:grid_size[row, col]]
+    cells = np.empty(shape=(9, 2), dtype=np.int64)
+    for i in range(-1, 2, 1):
+        for j in range(-1, 2, 1):
+            this_row, this_col = row + i, col + j
+            if this_row >= 0 and this_col >= 0:
+                cells[(i + 1) * 3 + (j + 1)] = np.array([this_row, this_col])
+            else:
+                cells[(i + 1) * 3 + (j + 1)] = np.array([666, 666])
 
-    # row, col = cells[2]
-    mask_grid_flatten = grid[row, col][:grid_size[row, col]]
+    row, col = cells[0]
+    mask0 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[1]
+    mask1 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[2]
+    mask2 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[3]
+    mask3 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[4]
+    mask4 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[5]
+    mask5 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[6]
+    mask6 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[7]
+    mask7 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+    row, col = cells[8]
+    mask8 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
+
+    mask_grid_flatten = np.array([
+        *mask0,
+        *mask1,
+        *mask2,
+        *mask3,
+        *mask4,
+        *mask5,
+        *mask6,
+        *mask7,
+        *mask8,
+    ])
+
     return mask_grid_flatten
 
 
@@ -302,7 +327,7 @@ def calculate_acceleration(boids: np.ndarray,
 
         # создание макси для боидов, находящихся рядом
 
-        mask_grid = get_mask_grid_with_quoters(boids, grid, grid_size, indexes_in_grid, cell_size, i)
+        mask_grid = get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, i)
         boids_nearby = boids[mask_grid]  # боидсы, которые находятся рядом
         i_nearby = get_index(mask_grid, i)
 
