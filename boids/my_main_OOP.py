@@ -26,13 +26,11 @@ class BoidsSimulation(QMainWindow):
         self.cohesion_slider = None
         self.separation_slider = None
         self.alignment_slider = None
-        self.perception_radius_slider = None
         self.separation_from_walls_slider = None
 
         self.separation_label = None
         self.alignment_label = None
         self.cohesion_label = None
-        self.perception_radius_label = None
         self.separation_from_walls_label = None
 
         self.central_widget = QWidget(self)
@@ -114,10 +112,6 @@ class BoidsSimulation(QMainWindow):
         self.separation_from_walls_label.setText(f"Separation from walls: {self.coeffs['separation_from_walls']}")
         self.separation_from_walls_slider = QSlider(Qt.Orientation.Horizontal)
 
-        self.perception_radius_label = QLabel(self)
-        self.perception_radius_label.setText(f"Perception radius: 1 / {int(1 / self.perception_radius)}")
-        self.perception_radius_slider = QSlider(Qt.Orientation.Horizontal)
-
         # self.wall_bounce_checkbox = QCheckBox("Wall bounce", self)
         # self.wall_bounce_checkbox.stateChanged.connect(self.wall_bounce_change)
         # self.wall_bounce_checkbox.setChecked(False)
@@ -140,10 +134,6 @@ class BoidsSimulation(QMainWindow):
         self.separation_from_walls_slider.setValue(int(self.coeffs["separation_from_walls"] * config.slider_multiplier))
         self.separation_from_walls_slider.valueChanged.connect(self.separation_from_walls_change)
 
-        self.perception_radius_slider.setRange(config.perception_radius_range[0], config.perception_radius_range[1])
-        self.perception_radius_slider.setValue(int((1 / self.perception_radius) * config.slider_multiplier))
-        self.perception_radius_slider.valueChanged.connect(self.perception_radius_change)
-
         # установка в layout
 
         layout.addWidget(self.canvas.native)
@@ -151,16 +141,16 @@ class BoidsSimulation(QMainWindow):
         # layout.addWidget(self.wall_bounce_checkbox)
 
         layout.addWidget(self.cohesion_label)
-        layout.addWidget(self.separation_label)
-        layout.addWidget(self.alignment_label)
-        layout.addWidget(self.separation_from_walls_label)
-        layout.addWidget(self.perception_radius_label)
-
         layout.addWidget(self.cohesion_slider)
+
+        layout.addWidget(self.separation_label)
         layout.addWidget(self.separation_slider)
+
+        layout.addWidget(self.alignment_label)
         layout.addWidget(self.alignment_slider)
+
+        layout.addWidget(self.separation_from_walls_label)
         layout.addWidget(self.separation_from_walls_slider)
-        layout.addWidget(self.perception_radius_slider)
 
     def cohesion_change(self, value):
         value = value / config.slider_multiplier
@@ -185,22 +175,6 @@ class BoidsSimulation(QMainWindow):
         self.coeffs["separation_from_walls"] = float(value)
         self.separation_from_walls_label.setText(f"Separation from walls: {value}")
         print(f"Separation from walls changed to: {value}")
-
-    def perception_radius_change(self, value):
-        value = int(value / config.slider_multiplier)
-        self.perception_radius = 1 / value
-        self.perception_radius_label.setText(f"Perception radius: 1 / {value}")
-        print(f"Perception radius changed to: 1 / {value}")
-
-        # self.cell_size = 2 * self.perception_radius
-        # self.grid = np.empty((
-        #     int(self.size[0] // self.cell_size) + 1,
-        #     int(self.size[1] // self.cell_size) + 1,
-        #     self.N
-        # ), dtype=int)
-        # self.indexes_in_grid = np.empty(shape=(self.boids.shape[0], 2), dtype=int)
-        # self.grid_size = np.empty((self.grid.shape[0], self.grid.shape[1]), dtype=int)
-        # calculate_grid(self.boids, self.grid, self.grid_size, self.indexes_in_grid, self.cell_size)
 
 
     # def wall_bounce_change(self, state):
