@@ -220,7 +220,6 @@ def get_quarter(boids, cell_size, id):
 
 @njit
 def get_mask_grid_with_quoters(boids, grid, grid_size, indexes_in_grid, cell_size, id):
-
     quoter = get_quarter(boids, cell_size, id)
     row, col = indexes_in_grid[id]
 
@@ -244,7 +243,6 @@ def get_mask_grid_with_quoters(boids, grid, grid_size, indexes_in_grid, cell_siz
     cells[2] = np.array([row - 1 + delta_y, col + 1 + delta_x])
     cells[3] = np.array([row + delta_y, col + 1 + delta_x])
 
-
     mask_grid0 = grid[row, col][:grid_size[row, col]]
     row, col = cells[1]
     mask_grid1 = grid[row, col][:grid_size[row, col]]
@@ -256,6 +254,27 @@ def get_mask_grid_with_quoters(boids, grid, grid_size, indexes_in_grid, cell_siz
     # print(cells)
     # print(quoter)
     return mask_grid
+
+
+@njit
+def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
+    row, col = indexes_in_grid[id]
+    # cells = np.empty(shape=(9, 2), dtype=np.int64)
+    # for i in range(-1, 2, 1):
+    #     for j in range(-1, 2, 1):
+    #         this_row, this_col = row + i, col + j
+    #         if this_row >= 0 and this_col >= 0:
+    #             cells[(i + 1) * 3 + (j + 1)] = np.array([this_row, this_col])
+    #         else:
+    #             cells[(i + 1) * 3 + (j + 1)] = np.array([666, 666])
+    # for i in range(2, 3):
+    #     row, col = cells[i]
+    #     if row != 666 and col != 666:
+    #         mask_grid_flatten = grid[row, col][:grid_size[row, col]]
+
+    # row, col = cells[2]
+    mask_grid_flatten = grid[row, col][:grid_size[row, col]]
+    return mask_grid_flatten
 
 
 @njit
@@ -272,7 +291,8 @@ def get_index(mask_grid, id):
 def calculate_acceleration(boids: np.ndarray,
                            perception_radius: float,
                            coeff: np.array,
-                           screen_size: np.array, indexes_in_grid: np.array, grid: np.array, grid_size: np.array, cell_size):
+                           screen_size: np.array, indexes_in_grid: np.array, grid: np.array, grid_size: np.array,
+                           cell_size):
     """
     Функция, отвечающая за взаимодействие птиц между собой
     """
