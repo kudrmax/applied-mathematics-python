@@ -286,6 +286,7 @@ def calculate_acceleration(boids: np.ndarray,
                            cell_size,
                            neighbours_of_main_characters,
                            neighbours_of_main_characters_size: np.array,
+                           sector_flag,
                            alpha):
     """
     Функция, отвечающая за взаимодействие птиц между собой
@@ -302,8 +303,10 @@ def calculate_acceleration(boids: np.ndarray,
         D = compute_distance(boids_nearby, i_nearby)
         mask_in_perception_radius = D < perception_radius
 
-        # mask_sector = mask_in_perception_radius
-        mask_sector = get_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=alpha)
+        if sector_flag:
+            mask_sector = get_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=alpha)
+        else:
+            mask_sector = mask_in_perception_radius
         mask_alignment = np.logical_and(mask_in_perception_radius, mask_sector)
         mask_separation = np.logical_and(D < perception_radius / 2.0, mask_sector)
         mask_cohesion = np.logical_xor(mask_separation, mask_alignment)

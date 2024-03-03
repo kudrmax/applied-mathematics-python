@@ -21,7 +21,7 @@ class BoidsSimulation(QMainWindow):
 
         # слайдеры
 
-        # self.wall_bounce_checkbox = None
+        self.sector_checkbox = None
 
         self.cohesion_slider = None
         self.separation_slider = None
@@ -48,6 +48,7 @@ class BoidsSimulation(QMainWindow):
         self.max_speed_magnitude = config.max_speed_magnitude
         self.max_acceleration_magnitude = config.max_acceleration_magnitude
         self.alpha = config.alpha // 2
+        self.sector_flag = False
 
         # boids
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
@@ -124,9 +125,9 @@ class BoidsSimulation(QMainWindow):
         self.separation_from_walls_label.setText(f"Separation from walls: {self.coeffs['separation_from_walls']}")
         self.separation_from_walls_slider = QSlider(Qt.Orientation.Horizontal)
 
-        # self.wall_bounce_checkbox = QCheckBox("Wall bounce", self)
-        # self.wall_bounce_checkbox.stateChanged.connect(self.wall_bounce_change)
-        # self.wall_bounce_checkbox.setChecked(False)
+        self.sector_checkbox = QCheckBox("Sector:", self)
+        self.sector_checkbox.stateChanged.connect(self.sector_change)
+        self.sector_checkbox.setChecked(False)
 
         # изменить переменные, за которые отвечают слайдеры
 
@@ -142,8 +143,7 @@ class BoidsSimulation(QMainWindow):
         self.alignment_slider.setValue(int(self.coeffs["alignment"] * config.slider_multiplier))
         self.alignment_slider.valueChanged.connect(self.alignment_change)
 
-        self.separation_from_walls_slider.setRange(config.separation_from_walls_range[0],
-                                                   config.separation_from_walls_range[1])
+        self.separation_from_walls_slider.setRange(config.separation_from_walls_range[0], config.separation_from_walls_range[1])
         self.separation_from_walls_slider.setValue(int(self.coeffs["separation_from_walls"] * config.slider_multiplier))
         self.separation_from_walls_slider.valueChanged.connect(self.separation_from_walls_change)
 
@@ -151,7 +151,7 @@ class BoidsSimulation(QMainWindow):
 
         layout.addWidget(self.canvas.native)
 
-        # layout.addWidget(self.wall_bounce_checkbox)
+        layout.addWidget(self.sector_checkbox)
 
         layout.addWidget(self.cohesion_label)
         layout.addWidget(self.cohesion_slider)
@@ -189,12 +189,12 @@ class BoidsSimulation(QMainWindow):
         self.separation_from_walls_label.setText(f"Separation from walls: {value}")
         print(f"Separation from walls changed to: {value}")
 
-    # def wall_bounce_change(self, state):
-    #     if state == 2:
-    #         self.wall_bounce = True
-    #     else:
-    #         self.wall_bounce = False
-    #     print(f"Wall bounce changed to: {self.wall_bounce}")
+    def sector_change(self, state):
+        if state == 2:
+            self.sector_flag = True
+        else:
+            self.sector_flag = False
+        print(f"Sector changed to: {self.sector_flag}")
 
     def update(self):
         # начало отсчета времени
@@ -213,6 +213,7 @@ class BoidsSimulation(QMainWindow):
             self.cell_size,
             self.neighbours_of_main_characters,
             self.neighbours_of_main_characters_size,
+            self.sector_flag,
             self.alpha
         )
         # print(self.neighbours_of_main_characters_size)

@@ -9,7 +9,7 @@ perception_radius = 1 / 30
 # velocity_range = (0, 0.2 / (0.05 / 0.008))  # ограничения на скорости
 velocity_range = (0, 0.2)  # ограничения на скорости
 
-alpha = 90
+alpha = 358
 
 slider_multiplier = 10000
 cohesion_range = (0, 0.5)
