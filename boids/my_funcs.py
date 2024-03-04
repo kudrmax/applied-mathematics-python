@@ -282,10 +282,13 @@ def compute_separation_from_walls(id, indexes_in_grid, grid):
 def calculate_acceleration(boids: np.ndarray,
                            perception_radius: float,
                            coeff: np.array,
-                           screen_size: np.array, indexes_in_grid: np.array, grid: np.array, grid_size: np.array,
+                           indexes_in_grid: np.array,
+                           grid: np.array,
+                           grid_size: np.array,
                            cell_size,
-                           neighbours_of_main_characters,
-                           neighbours_of_main_characters_size: np.array,
+                           neighbours_of_main_character,
+                           neighbours_of_main_character_size: np.array,
+                           main_character_velocity,
                            sector_flag,
                            alpha):
     """
@@ -335,14 +338,17 @@ def calculate_acceleration(boids: np.ndarray,
                        + coeff[3] * a_separation_from_walls
         boids[i, 4:6] = acceleration
 
-        # боиды, которые попали в зону видимости боида с индексом 0
         if i == 0:
+            # заполняем боидов, которые попали в зону видимости боида с индексом 0
             count = 0
             neighbours = mask_grid[mask_alignment]
             for j in range(neighbours.shape[0]):
-                neighbours_of_main_characters[j] = neighbours[j]
+                neighbours_of_main_character[j] = neighbours[j]
                 count += 1
-            neighbours_of_main_characters_size[0] = count
+            neighbours_of_main_character_size[0] = count
+
+            # заполняем вектор скорости боида с индексом 0
+            main_character_velocity[:] = boids_nearby[i_nearby][2:4]
 
 
 def calculate_velocity(boids: np.ndarray, dt: float, velocity_range: np.array):

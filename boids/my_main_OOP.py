@@ -53,9 +53,10 @@ class BoidsSimulation(QMainWindow):
         # boids
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
-        self.main_characters_boids = self.boids[0:1]
+        self.main_character_boids = self.boids[0:1]
         self.neighbours_of_main_character = np.empty(self.N, dtype=int)
         self.neighbours_of_main_character_size = np.array([0], dtype=int)
+        self.main_character_velocity = np.empty(2, dtype=float)
         print('boids end')
 
         # grid
@@ -96,8 +97,8 @@ class BoidsSimulation(QMainWindow):
             connect='segments',
             parent=self.view.scene
         )
-        self.ellipse = scene.Ellipse(
-            center=self.main_characters_boids[0][0:2],
+        self.main_character_visual_range = scene.Ellipse(
+            center=self.main_character_boids[0][0:2],
             radius=self.perception_radius,
             color=(0, 0, 1, 0.3), border_width=0,
             num_segments=100,
@@ -205,7 +206,9 @@ class BoidsSimulation(QMainWindow):
         print(f"Sector changed to: {self.sector_flag}")
 
     def update(self):
-        self.ellipse.center = self.main_characters_boids[0][0:2]
+
+        self.main_character_visual_range.center = self.main_character_boids[0][0:2]
+        print(self.main_character_velocity)
 
         # начало отсчета времени
         start_time = time.time()
@@ -214,15 +217,14 @@ class BoidsSimulation(QMainWindow):
         calculate_acceleration(
             self.boids,
             self.perception_radius,
-            np.array([self.coeffs["cohesion"], self.coeffs["separation"],
-                      self.coeffs["alignment"], self.coeffs["separation_from_walls"]]),
-            self.size,
+            np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"], self.coeffs["separation_from_walls"]]),
             self.indexes_in_grid,
             self.grid,
             self.grid_size,
             self.cell_size,
             self.neighbours_of_main_character,
             self.neighbours_of_main_character_size,
+            self.main_character_velocity,
             self.sector_flag,
             self.alpha
         )
