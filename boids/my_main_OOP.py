@@ -56,7 +56,7 @@ class BoidsSimulation(QMainWindow):
         self.main_character_boids = self.boids[0:1]
         self.neighbours_of_main_character = np.empty(self.N, dtype=int)
         self.neighbours_of_main_character_size = np.array([0], dtype=int)
-        self.main_character_velocity = np.empty(2, dtype=float)
+        self.main_character_velocity = np.empty((2, 2), dtype=float)
         print('boids end')
 
         # grid
@@ -84,14 +84,21 @@ class BoidsSimulation(QMainWindow):
             connect='segments',
             parent=self.view.scene
         )
-        self.red_arrows = scene.Arrow(
+        self.main_character_arrows = scene.Arrow(
             arrows=directions(self.boids[0:1], self.delta_time),
             arrow_color=(1, 0, 0, 1),
             arrow_size=10,
             connect='segments',
             parent=self.view.scene
         )
-        self.blue_arrows = scene.Arrow(
+        self.main_character_velocity_arrow = scene.Line(
+            pos=np.array([[0, 0], [0, 0]]),
+            color=(1, 0, 0, 1),
+            width=1,
+            connect='strip',
+            parent=self.view.scene
+        )
+        self.neighbours_of_main_character_arrows = scene.Arrow(
             arrow_color=(0, 1, 0, 1),
             arrow_size=7.5,
             connect='segments',
@@ -208,7 +215,7 @@ class BoidsSimulation(QMainWindow):
     def update(self):
 
         self.main_character_visual_range.center = self.main_character_boids[0][0:2]
-        print(self.main_character_velocity)
+        self.main_character_velocity_arrow.set_data(pos=self.main_character_velocity)  # отрисовка стрелок
 
         # начало отсчета времени
         start_time = time.time()
@@ -253,12 +260,12 @@ class BoidsSimulation(QMainWindow):
         self.delta_time = end_time - start_time
 
         # отрисовка
-        self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
-        self.blue_arrows.set_data(
+        self.arrows.set_data(arrows=directions(self.boids, self.delta_time))
+        self.neighbours_of_main_character_arrows.set_data(
             arrows=directions(
                 self.boids[self.neighbours_of_main_character[:self.neighbours_of_main_character_size[0]]],
                 self.delta_time))  # отрисовка стрелок
-        self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
+        self.main_character_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))
         self.canvas.update()  # отображение
 
 

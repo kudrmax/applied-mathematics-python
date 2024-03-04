@@ -348,7 +348,8 @@ def calculate_acceleration(boids: np.ndarray,
             neighbours_of_main_character_size[0] = count
 
             # заполняем вектор скорости боида с индексом 0
-            main_character_velocity[:] = boids_nearby[i_nearby][2:4]
+            main_character_velocity[0] = boids_nearby[i_nearby][0:2]
+            main_character_velocity[1] = boids_nearby[i_nearby][0:2] + boids_nearby[i_nearby][2:4]
 
 
 def calculate_velocity(boids: np.ndarray, dt: float, velocity_range: np.array):
