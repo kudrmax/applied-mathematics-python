@@ -54,8 +54,8 @@ class BoidsSimulation(QMainWindow):
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
         self.main_characters_boids = self.boids[0:1]
-        self.neighbours_of_main_characters = np.empty(self.N, dtype=int)
-        self.neighbours_of_main_characters_size = np.array([0], dtype=int)
+        self.neighbours_of_main_character = np.empty(self.N, dtype=int)
+        self.neighbours_of_main_character_size = np.array([0], dtype=int)
         print('boids end')
 
         # grid
@@ -205,6 +205,8 @@ class BoidsSimulation(QMainWindow):
         print(f"Sector changed to: {self.sector_flag}")
 
     def update(self):
+        self.ellipse.center = self.main_characters_boids[0][0:2]
+
         # начало отсчета времени
         start_time = time.time()
 
@@ -219,8 +221,8 @@ class BoidsSimulation(QMainWindow):
             self.grid,
             self.grid_size,
             self.cell_size,
-            self.neighbours_of_main_characters,
-            self.neighbours_of_main_characters_size,
+            self.neighbours_of_main_character,
+            self.neighbours_of_main_character_size,
             self.sector_flag,
             self.alpha
         )
@@ -252,10 +254,9 @@ class BoidsSimulation(QMainWindow):
         self.arrows.set_data(arrows=directions(self.boids, self.delta_time))  # отрисовка стрелок
         self.blue_arrows.set_data(
             arrows=directions(
-                self.boids[self.neighbours_of_main_characters[:self.neighbours_of_main_characters_size[0]]],
+                self.boids[self.neighbours_of_main_character[:self.neighbours_of_main_character_size[0]]],
                 self.delta_time))  # отрисовка стрелок
         self.red_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))  # отрисовка стрелок
-        self.ellipse.center = self.main_characters_boids[0][0:2]
         self.canvas.update()  # отображение
 
 
