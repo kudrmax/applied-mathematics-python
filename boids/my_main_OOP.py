@@ -55,6 +55,10 @@ class BoidsSimulation(QMainWindow):
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
         self.main_character_boids = self.boids[0:1]
         self.neighbours_of_main_character = np.empty(self.N, dtype=int)
+        self.triangle = np.empty((3, 2), dtype=float)
+        self.triangle = np.array([[0.0, 0],
+                                  [0, 100],
+                                  [100, 0]])
         self.neighbours_of_main_character_size = np.array([0], dtype=int)
         self.main_character_velocity = np.empty((2, 2), dtype=float)
         print('boids end')
@@ -111,6 +115,16 @@ class BoidsSimulation(QMainWindow):
             num_segments=100,
             parent=self.view.scene
         )
+        # self.triangle_shape = scene.Polygon(
+        #     pos=np.array([(0, 0),
+        #                   (100, 0),
+        #                   (100, 100)]),
+        #     color=(1, 0, 0, 1),
+        #     border_color=(1, 0, 0, 1),
+        #     border_width=30,
+        #     parent=self.view.scene
+        # )
+
 
         # слайдеры
         self.create_sliders(layout)
@@ -224,7 +238,8 @@ class BoidsSimulation(QMainWindow):
         calculate_acceleration(
             self.boids,
             self.perception_radius,
-            np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"], self.coeffs["separation_from_walls"]]),
+            np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"],
+                      self.coeffs["separation_from_walls"]]),
             self.indexes_in_grid,
             self.grid,
             self.grid_size,
@@ -267,7 +282,6 @@ class BoidsSimulation(QMainWindow):
                 self.delta_time))  # отрисовка стрелок
         self.main_character_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))
         self.canvas.update()  # отображение
-
 
         # проверка среднего расстояния @todo удалить
         # self.r_vecs[self.count] = self.boids[0, 0:2]
