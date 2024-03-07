@@ -38,7 +38,7 @@ class BoidsSimulation(QMainWindow):
         layout = QVBoxLayout(self.central_widget)
 
         # ресурсы
-        self.delta_time = 0.0
+        self.delta_time = 0.05
         self.coeffs = config.coeffs
         self.W, self.H = config.W, config.H  # размеры экрана
         self.N = config.N  # кол-во птиц
@@ -46,7 +46,6 @@ class BoidsSimulation(QMainWindow):
         self.perception_radius = config.perception_radius
         self.velocity_range = config.velocity_range
         self.max_speed_magnitude = config.max_speed_magnitude
-        self.max_acceleration_magnitude = config.max_acceleration_magnitude
         self.angle = config.angle
         self.sector_flag = False
         self.zoom_camera_flag = False
@@ -123,7 +122,7 @@ class BoidsSimulation(QMainWindow):
     def create_sliders(self, layout):
         # отобразить инфо на слайдерах
 
-        self.zoom_camera_checkbox = QCheckBox("Camera center", self)
+        self.zoom_camera_checkbox = QCheckBox("Zoom", self)
         self.zoom_camera_checkbox.stateChanged.connect(self.following_camera)
         self.zoom_camera_checkbox.setChecked(False)
 
@@ -265,7 +264,7 @@ class BoidsSimulation(QMainWindow):
         self.update_graphics()
 
         # начало отсчета времени
-        start_time = time.time()
+        # start_time = time.time()
 
         # алгоритм boids (взаимодействие птиц между друг другом)
         calculate_acceleration(
@@ -307,7 +306,7 @@ class BoidsSimulation(QMainWindow):
 
         # конец отсчета времени
         end_time = time.time()
-        self.delta_time = end_time - start_time
+        # self.delta_time = end_time - start_time
 
 
 if __name__ == '__main__':

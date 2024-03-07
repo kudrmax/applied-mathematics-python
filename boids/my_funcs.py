@@ -53,14 +53,28 @@ def compute_distance(boids: np.ndarray, i: int):
     return np.sqrt(dr[:, 0] ** 2 + dr[:, 1] ** 2)
 
 
-def clip_vector(v: np.ndarray, vector_range: np.array):
+def clip_ndarray(v: np.ndarray, range: np.array):
     """
     Обрезать вектор, если он выходит за vector_range[1]
     """
     norm = np.linalg.norm(v, axis=1)
-    mask = norm > vector_range[1]
-    if np.any(mask):
-        v[mask] *= vector_range[1] / norm[mask, None]
+    mask_greater = norm > range[1]
+    mask_lower = norm < range[0]
+    if np.any(mask_greater):
+        v[mask_greater] *= range[1] / norm[mask_greater, None]
+    if np.any(mask_lower):
+        v[mask_lower] *= range[0] / norm[mask_lower, None]
+
+@njit
+def clip_array(v: np.array, range: np.array):
+    """
+    Обрезать вектор, если он выходит за vector_range[1]
+    """
+    norm = np.linalg.norm(v)
+    if norm > range[1]:
+        v *= range[1] / norm
+    elif norm < range[0]:
+        v *= range[0] / norm
 
 
 @njit
@@ -75,9 +89,7 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
         delta_steering_pos /= np.linalg.norm(delta_steering_pos)
         delta_steering_pos *= config.max_speed_magnitude
         delta_steering_v = delta_steering_pos - boids[id, 2:4]
-        if np.linalg.norm(delta_steering_v) > config.max_acceleration_magnitude:
-            delta_steering_v /= np.linalg.norm(delta_steering_v)
-            delta_steering_v *= config.max_acceleration_magnitude
+        clip_array(delta_steering_v, range=config.acceleration_range)
         return delta_steering_v
     else:
         return np.zeros(2)
@@ -94,9 +106,7 @@ def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array
     steering_pos /= np.linalg.norm(steering_pos)
     steering_pos *= config.max_speed_magnitude
     delta_steering_v = steering_pos - boids[id, 2:4]
-    if np.linalg.norm(delta_steering_v) > config.max_acceleration_magnitude:
-        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-        delta_steering_v *= config.max_acceleration_magnitude
+    clip_array(delta_steering_v, range=config.acceleration_range)
     return delta_steering_v
 
 
@@ -109,10 +119,9 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     steering_v /= np.linalg.norm(steering_v)
     steering_v *= config.max_speed_magnitude
     delta_steering_v = steering_v - boids[id][2:4]
-    if np.linalg.norm(delta_steering_v) > config.max_acceleration_magnitude:
-        delta_steering_v = delta_steering_v / np.linalg.norm(delta_steering_v)
-        delta_steering_v *= config.max_acceleration_magnitude
+    clip_array(delta_steering_v, range=config.acceleration_range)
     return delta_steering_v
+
 
 @njit
 def compute_noise(boid: np.array):
@@ -360,7 +369,7 @@ def calculate_velocity(boids: np.ndarray, dt: float, velocity_range: np.array):
     Пересчет скоростей за время dt
     """
     boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
-    clip_vector(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
+    clip_ndarray(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
 
 
 def calculate_position(boids: np.ndarray, dt: float):
