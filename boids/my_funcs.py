@@ -121,7 +121,7 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
         # delta_steering_pos /= np.linalg.norm(delta_steering_pos)
         # delta_steering_pos *= config.max_speed_magnitude
         delta_steering_v = delta_steering_pos - boids[id, 2:4]
-        # clip_array(delta_steering_v, range=config.acceleration_range)
+        clip_array(delta_steering_v, range=config.acceleration_range)
         return delta_steering_v
     else:
         return np.zeros(2)
@@ -150,7 +150,7 @@ def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array
     # steering_pos /= np.linalg.norm(steering_pos)
     # steering_pos *= config.max_speed_magnitude
     delta_steering_v = steering_pos - boids[id, 2:4]
-    # clip_array(delta_steering_v, range=config.acceleration_range)
+    clip_array(delta_steering_v, range=config.acceleration_range)
     return delta_steering_v
 
 
@@ -175,7 +175,7 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     # steering_v /= np.linalg.norm(steering_v)
     # steering_v *= config.max_speed_magnitude
     delta_steering_v = steering_v - boids[id][2:4]
-    # clip_array(delta_steering_v, range=config.acceleration_range)
+    clip_array(delta_steering_v, range=config.acceleration_range)
     return delta_steering_v
 
 
@@ -447,6 +447,7 @@ def calculate_acceleration(boids: np.ndarray,
             mask_sector = get_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=alpha)
         else:
             mask_sector = mask_in_perception_radius
+
         # mask_alignment = np.logical_and(mask_in_perception_radius, mask_sector)
         # mask_separation = np.logical_and(D < perception_radius / 2.0, mask_sector)
         # mask_cohesion = np.logical_xor(mask_separation, mask_alignment)

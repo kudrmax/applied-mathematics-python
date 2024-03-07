@@ -7,6 +7,7 @@ import config as config
 
 from vispy import app, scene
 from vispy.geometry import Rect
+from vispy.scene.visuals import Text
 
 app.use_app('pyqt6')
 
@@ -117,6 +118,12 @@ class BoidsSimulation(QMainWindow):
         #     parent=self.view.scene
         # )
 
+        # текст
+        self.text = Text(parent=self.canvas.scene, color='white', face='Consolas')
+        self.text.pos = self.canvas.size[0] // 2, self.canvas.size[1] // 10
+        self.text.font_size = 20
+        self.update_text()
+
         # layout
         self.create_sliders(layout)
         self.setLayout(layout)
@@ -134,7 +141,7 @@ class BoidsSimulation(QMainWindow):
         # создание
 
         self.zoom_camera_checkbox = QCheckBox("Zoom", self)
-        self.zoom_camera_checkbox.stateChanged.connect(self.following_camera)
+        self.zoom_camera_checkbox.stateChanged.connect(self.zoom_camera)
         self.zoom_camera_checkbox.setChecked(False)
 
         self.cohesion_label = QLabel(self)
@@ -216,6 +223,7 @@ class BoidsSimulation(QMainWindow):
         value = value / config.slider_multiplier
         self.coeffs["cohesion"] = float(value)
         self.cohesion_label.setText(f"Cohesion: {self.coeffs['cohesion']}")
+        self.update_text()
 
     def separation_change(self, value):
         """
@@ -224,6 +232,7 @@ class BoidsSimulation(QMainWindow):
         value = value / config.slider_multiplier
         self.coeffs["separation"] = float(value)
         self.separation_label.setText(f"Separation: {value}")
+        self.update_text()
 
     def alignment_change(self, value):
         """
@@ -232,6 +241,7 @@ class BoidsSimulation(QMainWindow):
         value = value / config.slider_multiplier
         self.coeffs["alignment"] = float(value)
         self.alignment_label.setText(f"Alignment: {value}")
+        self.update_text()
 
     def separation_from_walls_change(self, value):
         """
@@ -240,6 +250,7 @@ class BoidsSimulation(QMainWindow):
         value = value / config.slider_multiplier
         self.coeffs["separation_from_walls"] = float(value)
         self.separation_from_walls_label.setText(f"Separation from walls: {value}")
+        self.update_text()
 
     def angle_change(self, value):
         """
@@ -247,6 +258,7 @@ class BoidsSimulation(QMainWindow):
         """
         self.angle = value
         self.angle_label.setText(f"Sector angle: {value}")
+        self.update_text()
 
     def sector_change(self, state):
         """
@@ -256,8 +268,9 @@ class BoidsSimulation(QMainWindow):
             self.sector_flag = True
         else:
             self.sector_flag = False
+        self.update_text()
 
-    def following_camera(self, state):
+    def zoom_camera(self, state):
         """
         Функция, для изменения чекбокса, отвечающего за то, куда прикреплена камера —
             следует за боидсом с индексом 0 или никак не закреплена
@@ -271,6 +284,9 @@ class BoidsSimulation(QMainWindow):
             self.view.camera.center = (0.5, 0.5)
             self.view.camera.zoom(6)
 
+    def update_text(self):
+        self.text.text = f"N = {self.N}, coh = {self.coeffs['cohesion']}, sep = {self.coeffs['separation']}, alg = {self.coeffs['alignment']}, walls = {self.coeffs['separation_from_walls'],}, angle = {self.angle}"
+
     def update_graphics(self):
         """
         Функция, для отображения боидсов на экране
@@ -279,7 +295,7 @@ class BoidsSimulation(QMainWindow):
         # self.main_character_visual_range.center = self.main_character_boids[0][0:2] # отображение visual_range
         self.main_character_velocity_line.set_data(pos=self.main_character_velocity)
         self.arrows.set_data(color=(1, 0, 0, 1), arrows=directions(self.boids, self.delta_time))
-        self.arrows.arrow_color=self.arrows_color
+        self.arrows.arrow_color = self.arrows_color
         self.neighbours_of_main_character_arrows.set_data(
             arrows=directions(
                 self.boids[self.neighbours_of_main_character[:self.neighbours_of_main_character_size[0]]],
@@ -352,6 +368,8 @@ class BoidsSimulation(QMainWindow):
             if self.frame_count <= 2000:
                 frame = self.canvas.render(alpha=False)
                 self.writer.append_data(frame)
+            # if self.frame_count % 100 == 0:
+            #     print(self.frame_count)
 
 
 if __name__ == '__main__':
