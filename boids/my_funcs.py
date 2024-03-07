@@ -114,6 +114,10 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
         delta_steering_v *= config.max_acceleration_magnitude
     return delta_steering_v
 
+@njit
+def compute_noise(boid: np.array):
+    pass
+
 
 @njit(parallel=True)
 def compute_walls_collition(boids: np.ndarray, screen_size: np.array):
@@ -317,23 +321,24 @@ def calculate_acceleration(boids: np.ndarray,
         mask_cohesion[i_nearby] = False
 
         # считаем ускорения
-        a_separation = np.zeros(2)
-        a_cohesion = np.zeros(2)
-        a_alignment = np.zeros(2)
+        separation = np.zeros(2)
+        cohesion = np.zeros(2)
+        alignment = np.zeros(2)
 
         if np.any(mask_cohesion):
-            a_cohesion = compute_cohesion(boids_nearby, i_nearby, mask_cohesion)
+            cohesion = compute_cohesion(boids_nearby, i_nearby, mask_cohesion)
         if np.any(mask_separation):
-            a_separation = compute_separation(boids_nearby, i_nearby, mask_separation)
+            separation = compute_separation(boids_nearby, i_nearby, mask_separation)
         if np.any(mask_alignment):
-            a_alignment = compute_alignment(boids_nearby, i_nearby, mask_alignment)
-        a_separation_from_walls = compute_separation_from_walls(i, indexes_in_grid, grid)
-        # noise = compute_noise(boids_nearby[i])
+            alignment = compute_alignment(boids_nearby, i_nearby, mask_alignment)
+        separation_from_walls = compute_separation_from_walls(i, indexes_in_grid, grid)
+        noise = np.array([np.random.uniform(-0.1, 0.1), np.random.uniform(-0.1, 0.1)])
 
-        acceleration = coeff[0] * a_cohesion \
-                       + coeff[1] * a_separation \
-                       + coeff[2] * a_alignment \
-                       + coeff[3] * a_separation_from_walls
+        acceleration = coeff[0] * cohesion \
+                       + coeff[1] * separation \
+                       + coeff[2] * alignment \
+                       + coeff[3] * separation_from_walls \
+                       + coeff[4] * noise
         boids[i, 4:6] = acceleration
 
         if i == 0:

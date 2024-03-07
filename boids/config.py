@@ -31,7 +31,8 @@ coeffs = {
     'cohesion': 0.0,
     'separation': 0.0,
     'alignment': 0.0,
-    'separation_from_walls': 0.2,
+    'separation_from_walls': 0.0,
+    'noise': 1.0
 }
 
 # внутренние расчеты

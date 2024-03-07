@@ -275,7 +275,8 @@ class BoidsSimulation(QMainWindow):
                 self.coeffs["cohesion"],
                 self.coeffs["separation"],
                 self.coeffs["alignment"],
-                self.coeffs["separation_from_walls"]
+                self.coeffs["separation_from_walls"],
+                self.coeffs["noise"]
             ]),
             self.indexes_in_grid,
             self.grid,
