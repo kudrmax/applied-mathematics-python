@@ -86,8 +86,8 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
         steering_pos = np.sum(boids[mask][:, 0:2], axis=0)
         steering_pos /= boids[mask].shape[0]
         delta_steering_pos = steering_pos - boids[id][0:2]
-        delta_steering_pos /= np.linalg.norm(delta_steering_pos)
-        delta_steering_pos *= config.max_speed_magnitude
+        # delta_steering_pos /= np.linalg.norm(delta_steering_pos)
+        # delta_steering_pos *= config.max_speed_magnitude
         delta_steering_v = delta_steering_pos - boids[id, 2:4]
         # clip_array(delta_steering_v, range=config.acceleration_range)
         return delta_steering_v
@@ -103,8 +103,8 @@ def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array
     dr = boids[id][0:2] - boids[mask][:, 0:2]
     dr *= 1 / ((dr[:, 0] ** 2 + dr[:, 1] ** 2) + 0.001)
     steering_pos = np.sum(dr, axis=0)
-    steering_pos /= np.linalg.norm(steering_pos)
-    steering_pos *= config.max_speed_magnitude
+    # steering_pos /= np.linalg.norm(steering_pos)
+    # steering_pos *= config.max_speed_magnitude
     delta_steering_v = steering_pos - boids[id, 2:4]
     # clip_array(delta_steering_v, range=config.acceleration_range)
     return delta_steering_v
@@ -116,8 +116,8 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     steer towards the average heading of local flockmates
     """
     steering_v = np.sum(boids[mask][:, 2:4], axis=0)
-    steering_v /= np.linalg.norm(steering_v)
-    steering_v *= config.max_speed_magnitude
+    # steering_v /= np.linalg.norm(steering_v)
+    # steering_v *= config.max_speed_magnitude
     delta_steering_v = steering_v - boids[id][2:4]
     # clip_array(delta_steering_v, range=config.acceleration_range)
     return delta_steering_v
