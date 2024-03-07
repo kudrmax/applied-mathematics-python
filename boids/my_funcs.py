@@ -89,7 +89,7 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
         delta_steering_pos /= np.linalg.norm(delta_steering_pos)
         delta_steering_pos *= config.max_speed_magnitude
         delta_steering_v = delta_steering_pos - boids[id, 2:4]
-        clip_array(delta_steering_v, range=config.acceleration_range)
+        # clip_array(delta_steering_v, range=config.acceleration_range)
         return delta_steering_v
     else:
         return np.zeros(2)
@@ -106,7 +106,7 @@ def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array
     steering_pos /= np.linalg.norm(steering_pos)
     steering_pos *= config.max_speed_magnitude
     delta_steering_v = steering_pos - boids[id, 2:4]
-    clip_array(delta_steering_v, range=config.acceleration_range)
+    # clip_array(delta_steering_v, range=config.acceleration_range)
     return delta_steering_v
 
 
@@ -119,7 +119,7 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     steering_v /= np.linalg.norm(steering_v)
     steering_v *= config.max_speed_magnitude
     delta_steering_v = steering_v - boids[id][2:4]
-    clip_array(delta_steering_v, range=config.acceleration_range)
+    # clip_array(delta_steering_v, range=config.acceleration_range)
     return delta_steering_v
 
 
@@ -348,6 +348,7 @@ def calculate_acceleration(boids: np.ndarray,
                        + coeff[2] * alignment \
                        + coeff[3] * separation_from_walls \
                        + coeff[4] * noise
+        clip_array(acceleration, range=config.acceleration_range)
         boids[i, 4:6] = acceleration
 
         if i == 0:

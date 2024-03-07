@@ -8,7 +8,7 @@ perception_radius = 1 / 30
 
 # velocity_range = (0, 0.2 / (0.05 / 0.008))  # ограничения на скорости
 velocity_range = (0.01, 0.05)  # ограничения на скорости
-acceleration_range = (0.0, 1.0)  # ограничения на скорости
+acceleration_range = (0.0, 0.8 * velocity_range[1])  # ограничения на скорости
 
 angle = 45
 
