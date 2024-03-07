@@ -28,10 +28,10 @@ max_acceleration_magnitude = 10  # 10
 # max_delta_velocity_magnitude =  10 / (0.05 / 0.008) # 10
 
 coeffs = {
-    'cohesion': .0,
-    'separation': .0,
-    'alignment': .0,
-    'separation_from_walls': .0,
+    'cohesion': 0.0,
+    'separation': 0.0,
+    'alignment': 0.0,
+    'separation_from_walls': 0.2,
 }
 
 # внутренние расчеты

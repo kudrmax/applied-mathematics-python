@@ -19,7 +19,7 @@ class BoidsSimulation(QMainWindow):
         # слайдеры
 
         self.sector_checkbox = None
-        self.following_camera_checkbox = None
+        self.zoom_camera_checkbox = None
 
         self.cohesion_slider = None
         self.separation_slider = None
@@ -49,7 +49,7 @@ class BoidsSimulation(QMainWindow):
         self.max_acceleration_magnitude = config.max_acceleration_magnitude
         self.angle = config.angle
         self.sector_flag = False
-        self.following_camera_flag = False
+        self.zoom_camera_flag = False
 
         # boids
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
@@ -123,9 +123,9 @@ class BoidsSimulation(QMainWindow):
     def create_sliders(self, layout):
         # отобразить инфо на слайдерах
 
-        self.following_camera_checkbox = QCheckBox("Camera center", self)
-        self.following_camera_checkbox.stateChanged.connect(self.following_camera)
-        self.following_camera_checkbox.setChecked(False)
+        self.zoom_camera_checkbox = QCheckBox("Camera center", self)
+        self.zoom_camera_checkbox.stateChanged.connect(self.following_camera)
+        self.zoom_camera_checkbox.setChecked(False)
 
         self.cohesion_label = QLabel(self)
         self.cohesion_label.setText(f"Cohesion: {self.coeffs['cohesion']}")
@@ -178,7 +178,7 @@ class BoidsSimulation(QMainWindow):
 
         layout.addWidget(self.canvas.native)
 
-        layout.addWidget(self.following_camera_checkbox)
+        layout.addWidget(self.zoom_camera_checkbox)
 
         layout.addWidget(self.cohesion_label)
         layout.addWidget(self.cohesion_slider)
@@ -201,63 +201,68 @@ class BoidsSimulation(QMainWindow):
         value = value / config.slider_multiplier
         self.coeffs["cohesion"] = float(value)
         self.cohesion_label.setText(f"Cohesion: {self.coeffs['cohesion']}")
-        print(f"Cohesion changed to: {value}")
 
     def separation_change(self, value):
         value = value / config.slider_multiplier
         self.coeffs["separation"] = float(value)
         self.separation_label.setText(f"Separation: {value}")
-        print(f"Separation changed to: {value}")
 
     def alignment_change(self, value):
         value = value / config.slider_multiplier
         self.coeffs["alignment"] = float(value)
         self.alignment_label.setText(f"Alignment: {value}")
-        print(f"Alignment changed to: {value}")
 
     def separation_from_walls_change(self, value):
         value = value / config.slider_multiplier
         self.coeffs["separation_from_walls"] = float(value)
         self.separation_from_walls_label.setText(f"Separation from walls: {value}")
-        print(f"Separation from walls changed to: {value}")
 
     def angle_change(self, value):
         self.angle = value
         self.angle_label.setText(f"Sector angle: {value}")
-        print(f"Sector angle changed to: {value}")
 
     def sector_change(self, state):
         if state == 2:
             self.sector_flag = True
         else:
             self.sector_flag = False
-        print(f"Sector changed to: {self.sector_flag}")
 
     def following_camera(self, state):
         if state == 2:
-            self.following_camera_flag = True
+            self.zoom_camera_flag = True
             self.view.camera.center = tuple(self.boids[0, 0:2])
-            self.view.camera.zoom(1 / 6)
-            # self.arrows_selected.set_data(arrows=directions(self.boids[0:1], self.delta_time))
+            # self.view.camera.zoom(1 / 6)
         else:
-            self.following_camera_flag = False
+            self.zoom_camera_flag = False
             self.view.camera.center = (0.5, 0.5)
-            self.view.camera.zoom(1)
-            # self.arrows_selected.set_data(arrows=directions(self.boids[0:0], self.delta_time))
+            # self.view.camera.zoom(1)
 
-    def update(self):
-
+    def update_graphics(self):
         # # отображение visual_range
         # self.main_character_visual_range.center = self.main_character_boids[0][0:2]
 
         # отрисовка вектора скорости
         self.main_character_velocity_line.set_data(pos=self.main_character_velocity)  # отрисовка стрелок
 
-        # # камера на главом боидсе
-        # if self.following_camera_flag:
-        #     delta_distance = self.boids[0, 0:2] - self.view.camera.center[0:2]
-        #     self.view.camera.pan(delta_distance)
-        #     # self.arrows_selected.set_data(arrows=directions(self.boids[0:1], self.delta_time))
+        # отрисовка
+        self.main_character_velocity_line.set_data(pos=self.main_character_velocity)
+        self.arrows.set_data(arrows=directions(self.boids, self.delta_time))
+        self.neighbours_of_main_character_arrows.set_data(
+            arrows=directions(
+                self.boids[self.neighbours_of_main_character[:self.neighbours_of_main_character_size[0]]],
+                self.delta_time
+            )
+        )
+        self.main_character_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))
+        if self.zoom_camera_flag:
+            delta_distance = self.boids[0, 0:2] - self.view.camera.center[0:2]
+            self.view.camera.pan(delta_distance)
+        self.canvas.update()  # отображение
+
+    def update(self):
+
+        # отрисовка
+        self.update_graphics()
 
         # начало отсчета времени
         start_time = time.time()
@@ -266,8 +271,12 @@ class BoidsSimulation(QMainWindow):
         calculate_acceleration(
             self.boids,
             self.perception_radius,
-            np.array([self.coeffs["cohesion"], self.coeffs["separation"], self.coeffs["alignment"],
-                      self.coeffs["separation_from_walls"]]),
+            np.array([
+                self.coeffs["cohesion"],
+                self.coeffs["separation"],
+                self.coeffs["alignment"],
+                self.coeffs["separation_from_walls"]
+            ]),
             self.indexes_in_grid,
             self.grid,
             self.grid_size,
@@ -298,20 +307,6 @@ class BoidsSimulation(QMainWindow):
         # конец отсчета времени
         end_time = time.time()
         self.delta_time = end_time - start_time
-
-        # отрисовка
-        self.arrows.set_data(arrows=directions(self.boids, self.delta_time))
-        self.neighbours_of_main_character_arrows.set_data(
-            arrows=directions(
-                self.boids[self.neighbours_of_main_character[:self.neighbours_of_main_character_size[0]]],
-                self.delta_time))  # отрисовка стрелок
-        self.main_character_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))
-        # камера на главом боидсе
-        if self.following_camera_flag:
-            delta_distance = self.boids[0, 0:2] - self.view.camera.center[0:2]
-            self.view.camera.pan(delta_distance)
-            # self.arrows_selected.set_data(arrows=directions(self.boids[0:1], self.delta_time))
-        self.canvas.update()  # отображение
 
 
 if __name__ == '__main__':
