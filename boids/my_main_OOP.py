@@ -61,7 +61,6 @@ class BoidsSimulation(QMainWindow):
                                   [100, 0]])
         self.neighbours_of_main_character_size = np.array([0], dtype=int)
         self.main_character_velocity = np.empty((2, 2), dtype=float)
-        print('boids end')
 
         # grid
         self.cell_size = 2 * self.perception_radius
@@ -70,17 +69,16 @@ class BoidsSimulation(QMainWindow):
             int(self.size[1] // self.cell_size) + 1,
             self.N
         ), dtype=int)
-        print('indexes_in_grid start')
         self.indexes_in_grid = np.empty(shape=(self.boids.shape[0], 2), dtype=int)
-        print('indexes_in_grid end')
         self.grid_size = np.empty((self.grid.shape[0], self.grid.shape[1]), dtype=int)
         calculate_grid(self.boids, self.grid, self.grid_size, self.indexes_in_grid, self.cell_size)
-        print('grid end')
 
         # canvas
         self.canvas = scene.SceneCanvas(show=True, size=(self.W, self.H), resizable=False)  # создаем сцену
         self.view = self.canvas.central_widget.add_view()
         self.view.camera = scene.PanZoomCamera(rect=Rect(0, 0, self.size[0], self.size[1]))
+
+        # стрелки
         self.arrows = scene.Arrow(
             arrows=directions(self.boids, self.delta_time),
             arrow_color=(1, 1, 1, 0.9),
@@ -95,7 +93,7 @@ class BoidsSimulation(QMainWindow):
             connect='segments',
             parent=self.view.scene
         )
-        self.main_character_velocity_arrow = scene.Line(
+        self.main_character_velocity_line = scene.Line(
             pos=np.array([[0, 0], [0, 0]]),
             color=(1, 0, 0, 1),
             width=1,
@@ -108,23 +106,13 @@ class BoidsSimulation(QMainWindow):
             connect='segments',
             parent=self.view.scene
         )
-        self.main_character_visual_range = scene.Ellipse(
-            center=self.main_character_boids[0][0:2],
-            radius=self.perception_radius,
-            color=(0, 0, 1, 0.3), border_width=0,
-            num_segments=100,
-            parent=self.view.scene
-        )
-        # self.triangle_shape = scene.Polygon(
-        #     pos=np.array([(0, 0),
-        #                   (100, 0),
-        #                   (100, 100)]),
-        #     color=(1, 0, 0, 1),
-        #     border_color=(1, 0, 0, 1),
-        #     border_width=30,
+        # self.main_character_visual_range = scene.Ellipse(
+        #     center=self.main_character_boids[0][0:2],
+        #     radius=self.perception_radius,
+        #     color=(0, 0, 1, 0.3), border_width=0,
+        #     num_segments=100,
         #     parent=self.view.scene
         # )
-
 
         # слайдеры
         self.create_sliders(layout)
@@ -228,8 +216,11 @@ class BoidsSimulation(QMainWindow):
 
     def update(self):
 
-        self.main_character_visual_range.center = self.main_character_boids[0][0:2]
-        self.main_character_velocity_arrow.set_data(pos=self.main_character_velocity)  # отрисовка стрелок
+        # # отображение visual_range
+        # self.main_character_visual_range.center = self.main_character_boids[0][0:2]
+
+        # отрисовка одного боидса, за которым мы следим
+        self.main_character_velocity_line.set_data(pos=self.main_character_velocity)  # отрисовка стрелок
 
         # начало отсчета времени
         start_time = time.time()
@@ -250,9 +241,6 @@ class BoidsSimulation(QMainWindow):
             self.sector_flag,
             self.alpha
         )
-        # print(self.neighbours_of_main_characters_size)
-        # print(self.neighbours_of_main_characters[:self.neighbours_of_main_characters_size[0]])
-        # print(neighbours.shape)
 
         # коллизия со стенами
         compute_walls_collition(self.boids, self.size)
@@ -282,14 +270,6 @@ class BoidsSimulation(QMainWindow):
                 self.delta_time))  # отрисовка стрелок
         self.main_character_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))
         self.canvas.update()  # отображение
-
-        # проверка среднего расстояния @todo удалить
-        # self.r_vecs[self.count] = self.boids[0, 0:2]
-        # self.count += 1
-        # if (self.count == 20):
-        #     arr = np.array(self.r_vecs)
-        #     dr = arr[1:self.count] - arr[:self.count-1]
-        #     print('MEAN = ', np.mean(np.linalg.norm(dr, axis=1)))
 
 
 if __name__ == '__main__':
