@@ -57,6 +57,7 @@ class BoidsSimulation(QMainWindow):
         self.neighbours_of_main_character = np.empty(self.N, dtype=int)
         self.neighbours_of_main_character_size = np.array([0], dtype=int)
         self.main_character_velocity = np.empty((2, 2), dtype=float)
+        self.arrows_color = np.empty((self.N, 4), dtype=float)
 
         # grid
         self.cell_size = 2 * self.perception_radius
@@ -77,28 +78,28 @@ class BoidsSimulation(QMainWindow):
         # стрелки
         self.arrows = scene.Arrow(
             arrows=directions(self.boids, self.delta_time),
-            arrow_color=(1, 1, 1, 0.9),
-            arrow_size=5,
+            arrow_color=(1, 1, 1, 0.7),
+            arrow_size=10,
             connect='segments',
             parent=self.view.scene
         )
         self.main_character_arrows = scene.Arrow(
             arrows=directions(self.boids[0:1], self.delta_time),
-            arrow_color=(1, 0, 0, 1),
+            arrow_color=(0.471, 0.471, 1, 1),
             arrow_size=10,
             connect='segments',
             parent=self.view.scene
         )
         self.main_character_velocity_line = scene.Line(
             pos=np.array([[0, 0], [0, 0]]),
-            color=(1, 0, 0, 1),
+            color=(0.471, 0.471, 1, 1),
             width=1,
             connect='strip',
             parent=self.view.scene
         )
         self.neighbours_of_main_character_arrows = scene.Arrow(
-            arrow_color=(0, 1, 0, 1),
-            arrow_size=7.5,
+            arrow_color=(0.431, 0.812, 0, 1),
+            arrow_size=10,
             connect='segments',
             parent=self.view.scene
         )
@@ -243,9 +244,17 @@ class BoidsSimulation(QMainWindow):
         # отрисовка вектора скорости
         self.main_character_velocity_line.set_data(pos=self.main_character_velocity)  # отрисовка стрелок
 
+        velocity_norm = np.linalg.norm(self.boids[:, 2:4], axis=1)
+        max_velocity, min_velocity = np.max(velocity_norm), np.min(velocity_norm)
+        G_max = 0.8
+        for i in range(self.N):
+            G = (velocity_norm[i] - min_velocity) / (max_velocity - min_velocity) * G_max
+            self.arrows_color[i] = np.array([1, G, 0, 0.7])
+
         # отрисовка
         self.main_character_velocity_line.set_data(pos=self.main_character_velocity)
-        self.arrows.set_data(arrows=directions(self.boids, self.delta_time))
+        self.arrows.set_data(color=(1, 0, 0, 1), arrows=directions(self.boids, self.delta_time))
+        self.arrows.arrow_color=self.arrows_color
         self.neighbours_of_main_character_arrows.set_data(
             arrows=directions(
                 self.boids[self.neighbours_of_main_character[:self.neighbours_of_main_character_size[0]]],
