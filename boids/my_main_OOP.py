@@ -16,12 +16,10 @@ class BoidsSimulation(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # self.r_vecs = np.zeros((100, 2), dtype=float)
-        # self.count = 0
-
         # слайдеры
 
         self.sector_checkbox = None
+        self.following_camera_checkbox = None
 
         self.cohesion_slider = None
         self.separation_slider = None
@@ -51,6 +49,7 @@ class BoidsSimulation(QMainWindow):
         self.max_acceleration_magnitude = config.max_acceleration_magnitude
         self.angle = config.angle
         self.sector_flag = False
+        self.following_camera_flag = False
 
         # boids
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
@@ -124,6 +123,10 @@ class BoidsSimulation(QMainWindow):
     def create_sliders(self, layout):
         # отобразить инфо на слайдерах
 
+        self.following_camera_checkbox = QCheckBox("Camera center", self)
+        self.following_camera_checkbox.stateChanged.connect(self.following_camera)
+        self.following_camera_checkbox.setChecked(False)
+
         self.cohesion_label = QLabel(self)
         self.cohesion_label.setText(f"Cohesion: {self.coeffs['cohesion']}")
         self.cohesion_slider = QSlider(Qt.Orientation.Horizontal)
@@ -174,6 +177,8 @@ class BoidsSimulation(QMainWindow):
         # установка в layout
 
         layout.addWidget(self.canvas.native)
+
+        layout.addWidget(self.following_camera_checkbox)
 
         layout.addWidget(self.cohesion_label)
         layout.addWidget(self.cohesion_slider)
@@ -228,13 +233,31 @@ class BoidsSimulation(QMainWindow):
             self.sector_flag = False
         print(f"Sector changed to: {self.sector_flag}")
 
+    def following_camera(self, state):
+        if state == 2:
+            self.following_camera_flag = True
+            self.view.camera.center = tuple(self.boids[0, 0:2])
+            self.view.camera.zoom(1 / 6)
+            # self.arrows_selected.set_data(arrows=directions(self.boids[0:1], self.delta_time))
+        else:
+            self.following_camera_flag = False
+            self.view.camera.center = (0.5, 0.5)
+            self.view.camera.zoom(1)
+            # self.arrows_selected.set_data(arrows=directions(self.boids[0:0], self.delta_time))
+
     def update(self):
 
         # # отображение visual_range
         # self.main_character_visual_range.center = self.main_character_boids[0][0:2]
 
-        # отрисовка одного боидса, за которым мы следим
+        # отрисовка вектора скорости
         self.main_character_velocity_line.set_data(pos=self.main_character_velocity)  # отрисовка стрелок
+
+        # # камера на главом боидсе
+        # if self.following_camera_flag:
+        #     delta_distance = self.boids[0, 0:2] - self.view.camera.center[0:2]
+        #     self.view.camera.pan(delta_distance)
+        #     # self.arrows_selected.set_data(arrows=directions(self.boids[0:1], self.delta_time))
 
         # начало отсчета времени
         start_time = time.time()
@@ -283,6 +306,11 @@ class BoidsSimulation(QMainWindow):
                 self.boids[self.neighbours_of_main_character[:self.neighbours_of_main_character_size[0]]],
                 self.delta_time))  # отрисовка стрелок
         self.main_character_arrows.set_data(arrows=directions(self.boids[0:1], self.delta_time))
+        # камера на главом боидсе
+        if self.following_camera_flag:
+            delta_distance = self.boids[0, 0:2] - self.view.camera.center[0:2]
+            self.view.camera.pan(delta_distance)
+            # self.arrows_selected.set_data(arrows=directions(self.boids[0:1], self.delta_time))
         self.canvas.update()  # отображение
 
 
