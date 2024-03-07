@@ -269,7 +269,7 @@ class BoidsSimulation(QMainWindow):
         else:
             self.zoom_camera_flag = False
             self.view.camera.center = (0.5, 0.5)
-            self.view.camera.zoom(1)
+            self.view.camera.zoom(6)
 
     def update_graphics(self):
         """

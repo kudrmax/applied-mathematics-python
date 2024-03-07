@@ -447,9 +447,13 @@ def calculate_acceleration(boids: np.ndarray,
             mask_sector = get_mask_sector(boids_nearby, mask_in_perception_radius, i_nearby, alpha=alpha)
         else:
             mask_sector = mask_in_perception_radius
-        mask_alignment = np.logical_and(mask_in_perception_radius, mask_sector)
-        mask_separation = np.logical_and(D < perception_radius / 2.0, mask_sector)
-        mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
+        # mask_alignment = np.logical_and(mask_in_perception_radius, mask_sector)
+        # mask_separation = np.logical_and(D < perception_radius / 2.0, mask_sector)
+        # mask_cohesion = np.logical_xor(mask_separation, mask_alignment)
+
+        mask_separation = mask_sector
+        mask_alignment = mask_sector
+        mask_cohesion = mask_sector
 
         mask_separation[i_nearby] = False
         mask_alignment[i_nearby] = False
