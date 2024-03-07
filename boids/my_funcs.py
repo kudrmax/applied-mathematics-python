@@ -378,3 +378,13 @@ def calculate_position(boids: np.ndarray, dt: float):
     Пересчет позиции за время dt
     """
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
+
+@njit(parallel=True)
+def fill_arrow_color(boids, arrows_color):
+    v = boids[:, 2:4]
+    velocity_norm = np.sqrt(v[:, 0] ** 2 + v[:, 1] ** 2)
+    max_velocity, min_velocity = np.max(velocity_norm), np.min(velocity_norm)
+    G_max = 0.8
+    for i in prange(boids.shape[0]):
+        G = (velocity_norm[i] - min_velocity) / (max_velocity - min_velocity) * G_max
+        arrows_color[i] = np.array([1, G, 0, 0.7])

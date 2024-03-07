@@ -249,12 +249,7 @@ class BoidsSimulation(QMainWindow):
         # отрисовка вектора скорости
         self.main_character_velocity_line.set_data(pos=self.main_character_velocity)  # отрисовка стрелок
 
-        velocity_norm = np.linalg.norm(self.boids[:, 2:4], axis=1)
-        max_velocity, min_velocity = np.max(velocity_norm), np.min(velocity_norm)
-        G_max = 0.8
-        for i in range(self.N):
-            G = (velocity_norm[i] - min_velocity) / (max_velocity - min_velocity) * G_max
-            self.arrows_color[i] = np.array([1, G, 0, 0.7])
+        fill_arrow_color(self.boids, self.arrows_color)
 
         # отрисовка
         self.main_character_velocity_line.set_data(pos=self.main_character_velocity)
@@ -271,12 +266,11 @@ class BoidsSimulation(QMainWindow):
             delta_distance = self.boids[0, 0:2] - self.view.camera.center[0:2]
             self.view.camera.pan(delta_distance)
 
-        # self.canvas.measure_fps()
-        # self.setWindowTitle(f"N = {self.N}; FPS = {np.round(self.canvas.fps, 2)};")
+        self.canvas.measure_fps()
+        self.setWindowTitle(f"N = {self.N}; FPS = {np.round(self.canvas.fps, 2)};")
         self.canvas.update()  # отображение
 
     def update(self):
-        self.frame_count += 1
 
         # отрисовка
         self.update_graphics()
@@ -327,6 +321,7 @@ class BoidsSimulation(QMainWindow):
         # self.delta_time = end_time - start_time
 
         if config.make_video_flag:
+            self.frame_count += 1
             if self.frame_count <= 2000:
                 frame = self.canvas.render(alpha=False)
                 self.writer.append_data(frame)
