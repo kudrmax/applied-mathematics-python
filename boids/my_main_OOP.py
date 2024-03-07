@@ -27,11 +27,13 @@ class BoidsSimulation(QMainWindow):
         self.separation_slider = None
         self.alignment_slider = None
         self.separation_from_walls_slider = None
+        self.angle_slider = None
 
         self.separation_label = None
         self.alignment_label = None
         self.cohesion_label = None
         self.separation_from_walls_label = None
+        self.angle_label = None
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
@@ -47,7 +49,7 @@ class BoidsSimulation(QMainWindow):
         self.velocity_range = config.velocity_range
         self.max_speed_magnitude = config.max_speed_magnitude
         self.max_acceleration_magnitude = config.max_acceleration_magnitude
-        self.alpha = config.alpha // 2
+        self.angle = config.angle
         self.sector_flag = False
 
         # boids
@@ -55,10 +57,6 @@ class BoidsSimulation(QMainWindow):
         init_boids(self.boids, self.size, self.velocity_range)  # создаем птиц
         self.main_character_boids = self.boids[0:1]
         self.neighbours_of_main_character = np.empty(self.N, dtype=int)
-        self.triangle = np.empty((3, 2), dtype=float)
-        self.triangle = np.array([[0.0, 0],
-                                  [0, 100],
-                                  [100, 0]])
         self.neighbours_of_main_character_size = np.array([0], dtype=int)
         self.main_character_velocity = np.empty((2, 2), dtype=float)
 
@@ -142,6 +140,10 @@ class BoidsSimulation(QMainWindow):
         self.separation_from_walls_label.setText(f"Separation from walls: {self.coeffs['separation_from_walls']}")
         self.separation_from_walls_slider = QSlider(Qt.Orientation.Horizontal)
 
+        self.angle_label = QLabel(self)
+        self.angle_label.setText(f"Sector angle: {self.angle}")
+        self.angle_slider = QSlider(Qt.Orientation.Horizontal)
+
         self.sector_checkbox = QCheckBox("Sector:", self)
         self.sector_checkbox.stateChanged.connect(self.sector_change)
         self.sector_checkbox.setChecked(False)
@@ -160,6 +162,10 @@ class BoidsSimulation(QMainWindow):
         self.alignment_slider.setValue(int(self.coeffs["alignment"] * config.slider_multiplier))
         self.alignment_slider.valueChanged.connect(self.alignment_change)
 
+        self.angle_slider.setRange(config.angle_range[0], config.angle_range[1])
+        self.angle_slider.setValue(self.angle)
+        self.angle_slider.valueChanged.connect(self.angle_change)
+
         self.separation_from_walls_slider.setRange(config.separation_from_walls_range[0],
                                                    config.separation_from_walls_range[1])
         self.separation_from_walls_slider.setValue(int(self.coeffs["separation_from_walls"] * config.slider_multiplier))
@@ -168,8 +174,6 @@ class BoidsSimulation(QMainWindow):
         # установка в layout
 
         layout.addWidget(self.canvas.native)
-
-        layout.addWidget(self.sector_checkbox)
 
         layout.addWidget(self.cohesion_label)
         layout.addWidget(self.cohesion_slider)
@@ -182,6 +186,11 @@ class BoidsSimulation(QMainWindow):
 
         layout.addWidget(self.separation_from_walls_label)
         layout.addWidget(self.separation_from_walls_slider)
+
+        layout.addWidget(self.sector_checkbox)
+
+        layout.addWidget(self.angle_label)
+        layout.addWidget(self.angle_slider)
 
     def cohesion_change(self, value):
         value = value / config.slider_multiplier
@@ -206,6 +215,11 @@ class BoidsSimulation(QMainWindow):
         self.coeffs["separation_from_walls"] = float(value)
         self.separation_from_walls_label.setText(f"Separation from walls: {value}")
         print(f"Separation from walls changed to: {value}")
+
+    def angle_change(self, value):
+        self.angle = value
+        self.angle_label.setText(f"Sector angle: {value}")
+        print(f"Sector angle changed to: {value}")
 
     def sector_change(self, state):
         if state == 2:
@@ -239,7 +253,7 @@ class BoidsSimulation(QMainWindow):
             self.neighbours_of_main_character_size,
             self.main_character_velocity,
             self.sector_flag,
-            self.alpha
+            self.angle // 2
         )
 
         # коллизия со стенами

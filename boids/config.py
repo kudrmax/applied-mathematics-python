@@ -9,7 +9,7 @@ perception_radius = 1 / 30
 # velocity_range = (0, 0.2 / (0.05 / 0.008))  # ограничения на скорости
 velocity_range = (0, 0.2)  # ограничения на скорости
 
-alpha = 45
+angle = 45
 
 slider_multiplier = 10000
 cohesion_range = (0, 0.5)
@@ -17,6 +17,7 @@ separation_range = cohesion_range
 alignment_range = cohesion_range
 separation_from_walls_range = (0, 0.5)
 perception_radius_range = (1, 80)
+angle_range = (0, 360)
 
 arrow_size = 5
 

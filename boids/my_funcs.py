@@ -14,7 +14,6 @@ def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0
     """
     Функция, отвечающая за создание птиц
     """
-    print('init start')
     n = boids.shape[0]
     rng = np.random.default_rng()
 
@@ -29,7 +28,6 @@ def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0
     boids[:, 3] = v * np.sin(alpha)  # координата y
 
     boids[0][2:4] = [*velocity_range]
-    print('init end')
 
 
 def directions(boids: np.ndarray, dt: float):
