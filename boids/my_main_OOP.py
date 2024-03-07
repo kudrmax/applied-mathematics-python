@@ -18,6 +18,7 @@ class BoidsSimulation(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # для записи видео
         self.writer = imageio.get_writer('video.mp4', fps=60)
 
         # слайдеры
@@ -116,7 +117,7 @@ class BoidsSimulation(QMainWindow):
         #     parent=self.view.scene
         # )
 
-        # слайдеры
+        # layout
         self.create_sliders(layout)
         self.setLayout(layout)
 
@@ -126,7 +127,11 @@ class BoidsSimulation(QMainWindow):
         self.timer.start()
 
     def create_sliders(self, layout):
-        # отобразить инфо на слайдерах
+        """
+        Функция, для создания слайдеров и чекбоксов
+        """
+
+        # создание
 
         self.zoom_camera_checkbox = QCheckBox("Zoom", self)
         self.zoom_camera_checkbox.stateChanged.connect(self.following_camera)
@@ -156,7 +161,7 @@ class BoidsSimulation(QMainWindow):
         self.sector_checkbox.stateChanged.connect(self.sector_change)
         self.sector_checkbox.setChecked(False)
 
-        # изменить переменные, за которые отвечают слайдеры
+        # connect
 
         self.cohesion_slider.setRange(config.cohesion_range[0], config.cohesion_range[1])
         self.cohesion_slider.setValue(int(self.coeffs["cohesion"] * config.slider_multiplier))
@@ -174,8 +179,10 @@ class BoidsSimulation(QMainWindow):
         self.angle_slider.setValue(self.angle)
         self.angle_slider.valueChanged.connect(self.angle_change)
 
-        self.separation_from_walls_slider.setRange(config.separation_from_walls_range[0],
-                                                   config.separation_from_walls_range[1])
+        self.separation_from_walls_slider.setRange(
+            config.separation_from_walls_range[0],
+            config.separation_from_walls_range[1]
+        )
         self.separation_from_walls_slider.setValue(int(self.coeffs["separation_from_walls"] * config.slider_multiplier))
         self.separation_from_walls_slider.valueChanged.connect(self.separation_from_walls_change)
 
@@ -203,55 +210,73 @@ class BoidsSimulation(QMainWindow):
         layout.addWidget(self.angle_slider)
 
     def cohesion_change(self, value):
+        """
+        Функция, для изменения слайдера, отвечающего за cohesion
+        """
         value = value / config.slider_multiplier
         self.coeffs["cohesion"] = float(value)
         self.cohesion_label.setText(f"Cohesion: {self.coeffs['cohesion']}")
 
     def separation_change(self, value):
+        """
+        Функция, для изменения слайдера, отвечающего за separation
+        """
         value = value / config.slider_multiplier
         self.coeffs["separation"] = float(value)
         self.separation_label.setText(f"Separation: {value}")
 
     def alignment_change(self, value):
+        """
+        Функция, для изменения слайдера, отвечающего за alignment
+        """
         value = value / config.slider_multiplier
         self.coeffs["alignment"] = float(value)
         self.alignment_label.setText(f"Alignment: {value}")
 
     def separation_from_walls_change(self, value):
+        """
+        Функция, для изменения слайдера, отвечающего за separation_from_walls
+        """
         value = value / config.slider_multiplier
         self.coeffs["separation_from_walls"] = float(value)
         self.separation_from_walls_label.setText(f"Separation from walls: {value}")
 
     def angle_change(self, value):
+        """
+        Функция, для изменения слайдера, отвечающего за угол сектора
+        """
         self.angle = value
         self.angle_label.setText(f"Sector angle: {value}")
 
     def sector_change(self, state):
+        """
+        Функция, для изменения чекбокса, отвечающего за форму области, в которой боидсы видят друг друга — сектор или круг.
+        """
         if state == 2:
             self.sector_flag = True
         else:
             self.sector_flag = False
 
     def following_camera(self, state):
+        """
+        Функция, для изменения чекбокса, отвечающего за то, куда прикреплена камера —
+            следует за боидсом с индексом 0 или никак не закреплена
+        """
         if state == 2:
             self.zoom_camera_flag = True
             self.view.camera.center = tuple(self.boids[0, 0:2])
-            # self.view.camera.zoom(1 / 6)
+            self.view.camera.zoom(1 / 6)
         else:
             self.zoom_camera_flag = False
             self.view.camera.center = (0.5, 0.5)
-            # self.view.camera.zoom(1)
+            self.view.camera.zoom(1)
 
     def update_graphics(self):
-        # # отображение visual_range
-        # self.main_character_visual_range.center = self.main_character_boids[0][0:2]
-
-        # отрисовка вектора скорости
-        self.main_character_velocity_line.set_data(pos=self.main_character_velocity)  # отрисовка стрелок
-
+        """
+        Функция, для отображения боидсов на экране
+        """
         fill_arrow_color(self.boids, self.arrows_color)
-
-        # отрисовка
+        # self.main_character_visual_range.center = self.main_character_boids[0][0:2] # отображение visual_range
         self.main_character_velocity_line.set_data(pos=self.main_character_velocity)
         self.arrows.set_data(color=(1, 0, 0, 1), arrows=directions(self.boids, self.delta_time))
         self.arrows.arrow_color=self.arrows_color
@@ -268,9 +293,12 @@ class BoidsSimulation(QMainWindow):
 
         self.canvas.measure_fps()
         self.setWindowTitle(f"N = {self.N}; FPS = {np.round(self.canvas.fps, 2)};")
-        self.canvas.update()  # отображение
+        self.canvas.update()
 
     def update(self):
+        """
+        Функция, которая вызывается в каждом кадре
+        """
 
         # отрисовка
         self.update_graphics()
@@ -289,15 +317,14 @@ class BoidsSimulation(QMainWindow):
                 self.coeffs["separation_from_walls"],
                 self.coeffs["noise"]
             ]),
-            self.indexes_in_grid,
             self.grid,
             self.grid_size,
-            self.cell_size,
+            self.indexes_in_grid,
             self.neighbours_of_main_character,
             self.neighbours_of_main_character_size,
             self.main_character_velocity,
             self.sector_flag,
-            self.angle // 2
+            self.angle
         )
 
         # коллизия со стенами

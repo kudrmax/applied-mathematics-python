@@ -3,16 +3,15 @@ from numba import njit, prange
 import config as config
 
 
-@njit
-def get_normal_vec(vec: np.array) -> np.array:
-    vec_rotated = np.array([vec[1], -vec[0]])
-    vec_rotated /= np.linalg.norm(vec_rotated)
-    return vec_rotated
-
-
 def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0., 1.)):
     """
-    Функция, отвечающая за создание птиц
+    Функция для создания массивая боидсов
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[i] соответствует массиву [x, y, vx, vy, ax, ay], где v и a — скорость и ускорения соответственно
+    screen_size: размер области, где screen_size = [ширина, высота]
+    velocity_range: максимальная и минимальаня скорости
     """
     n = boids.shape[0]
     rng = np.random.default_rng()
@@ -32,11 +31,19 @@ def init_boids(boids: np.ndarray, screen_size: tuple, velocity_range: tuple = (0
 
 def directions(boids: np.ndarray, dt: float):
     """
-    Функция для отрисовки векторов стрелок, т.е. для отрисовки в каком направлении движутся птицы
+    Функция для нахождения массива с координатами вершин стрелки, соответствующей бойдсу
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[i] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    dt: длительность одного кадра
 
     Returns
     -------
-    Массив вида N x (x0, y0, x, y) для отрисовки векторов стрелок
+    Массив вида (N, 4) для отрисовки векторов стрелок,
+    где i-тая строка соответствует массиву [x0, y0, x, y],
+    где [x0, y0] и [x, y] — предыдущее и нынешнее положение i-той птицы
     """
     pos = boids[:, :2]  # положение в момент времени t
     delta_pos = dt * boids[:, 2:4]  # как изменилось положение за dt
@@ -47,7 +54,17 @@ def directions(boids: np.ndarray, dt: float):
 @njit
 def compute_distance(boids: np.ndarray, i: int):
     """
-    Вычисление расстояний между птицами
+    Функция для нахождения расстояний между i-ым бойтсом и всеми остальными
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[i] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    i: номер бойтса
+
+    Returns
+    -------
+    Массив, где на j-том месте находится расстояние между i-ым и j-ым бойтсом
     """
     dr = boids[i, 0:2] - boids[:, 0:2]
     return np.sqrt(dr[:, 0] ** 2 + dr[:, 1] ** 2)
@@ -55,7 +72,8 @@ def compute_distance(boids: np.ndarray, i: int):
 
 def clip_ndarray(v: np.ndarray, range: np.array):
     """
-    Обрезать вектор, если он выходит за vector_range[1]
+    Функция, которая для каждой строки матрицы обрезает строку до range[1] если норма строки больше range[1]
+    или увеличивает стркоу до range[1] если ее норма меньше range[1].
     """
     norm = np.linalg.norm(v, axis=1)
     mask_greater = norm > range[1]
@@ -65,10 +83,12 @@ def clip_ndarray(v: np.ndarray, range: np.array):
     if np.any(mask_lower):
         v[mask_lower] *= range[0] / norm[mask_lower, None]
 
+
 @njit
 def clip_array(v: np.array, range: np.array):
     """
-    Обрезать вектор, если он выходит за vector_range[1]
+    Функция, которая обрезает вектор v до range[1] если его норма больше range[1]
+    или увеличивает его до range[1] если его норма меньше range[1].
     """
     norm = np.linalg.norm(v)
     if norm > range[1]:
@@ -80,7 +100,19 @@ def clip_array(v: np.array, range: np.array):
 @njit
 def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
     """
-    Steer to move towards the average position (center of mass) of local flockmates
+    Вычисление ускорения, соответствующего типу взаимодействия cohesion
+    Определение cohesion: steer to move towards the average position (center of mass) of local flockmates
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[id] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    id: номер строки, соответствующей данному боидсу
+    mask: маска боидсов, который взаимодействуют с id-ым боидсом с типом взаимодействия cohesion
+
+    Returns
+    -------
+    Вектор ускорения
     """
     if boids[mask].shape[0] > 1:
         steering_pos = np.sum(boids[mask][:, 0:2], axis=0)
@@ -98,7 +130,19 @@ def compute_cohesion(boids: np.ndarray, id: int, mask: np.array) -> np.array:
 @njit
 def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     """
-    steer to avoid crowding local flockmates
+    Вычисление ускорения, соответствующего типу взаимодействия separation
+    Определение separation: steer to avoid crowding local flockmates
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[id] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    id: номер строки, соответствующей данному боидсу
+    mask: маска боидсов, который взаимодействуют с id-ым боидсом с типом взаимодействия separation
+
+    Returns
+    -------
+    Вектор ускорения
     """
     dr = boids[id][0:2] - boids[mask][:, 0:2]
     dr *= 1 / ((dr[:, 0] ** 2 + dr[:, 1] ** 2) + 0.001)
@@ -113,7 +157,19 @@ def compute_separation(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array
 @njit
 def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     """
-    steer towards the average heading of local flockmates
+    Вычисление ускорения, соответствующего типу взаимодействия alignment
+    Определение alignment: steer towards the average heading of local flockmates
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[id] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    id: номер строки, соответствующей данному боидсу
+    mask: маска боидсов, который взаимодействуют с id-ым боидсом с типом взаимодействия alignment
+
+    Returns
+    -------
+    Вектор ускорения
     """
     steering_v = np.sum(boids[mask][:, 2:4], axis=0)
     # steering_v /= np.linalg.norm(steering_v)
@@ -123,15 +179,19 @@ def compute_alignment(boids: np.ndarray, id: int, mask: np.ndarray) -> np.array:
     return delta_steering_v
 
 
-@njit
-def compute_noise(boid: np.array):
-    pass
-
-
 @njit(parallel=True)
 def compute_walls_collition(boids: np.ndarray, screen_size: np.array):
     """
-    Расчет взаимодействия птиц со стенами
+    Функция для вычисления коллизии между боидсами и стенами.
+    Если боидс оказался внутри стены, то развернуть его вектор скорости в зависимости от того,
+    в какой стене он оказался (абсолютно упругое взаиможействие)
+    и поменять положение боидса так, чтобы он не находился в стене
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[id] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    screen_size: размер области, где screen_size = [ширина, высота]
     """
     mask_walls = np.empty((4, boids.shape[0]))
     mask_walls[0] = boids[:, 1] > screen_size[1]
@@ -165,9 +225,22 @@ def compute_walls_collition(boids: np.ndarray, screen_size: np.array):
 @njit
 def get_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float):
     """
-    Вычисление макси сектора
+    Функция, для создания маски боидсов, которые попали в сектор с углом alpha
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[id] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    id: номер строки, соответствующей данному боидсу
+    mask: маска боидсов, которые попадают в зону видимости, если зона видимости — оркужность
+    alpha: угол сектора
+
+    Returns
+    -------
+    Маска боидсов, которые попали в сектор
     """
     mask[id] = False
+    alpha = alpha // 2
     alpha_radians = np.radians(alpha)
 
     this_v = boids[id, 2:4]
@@ -186,21 +259,23 @@ def get_mask_sector(boids: np.ndarray, mask: np.array, id: int, alpha: float):
     return new_mask
 
 
-# @njit(parallel=True)
-def calculate_grid(boids, grid, grid_size, indexes_in_grid, cell_size):
+def calculate_grid(boids: np.ndarray, grid: np.ndarray, grid_size: np.ndarray, indexes_in_grid: np.ndarray, cell_size: int):
     """
-    Заполнение сетки, для вычисления расстояния.
+    Заполнение сетки grid, которая нужна для более эффективного вычисления расстояния между боидсами.
 
-    - Обновляем grid
-    - Заполняем заново indexes_in_grid
-    - Заполняем заново grid_size
+    Что делает функция:
+    1. Обновляет grid
+    2. Заполняет заново indexes_in_grid
+    3. Заполняет заново grid_size
 
     Parameters
     ----------
-    grid
-    grid_size
-    indexes_in_grid
-    cell_size
+    boids: матрица (N, 6), где boids[id] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    grid: матрица, где в ячейке [i, j] хранятся индексы боидсов, которые принадлежал клетке, соответствующей клетке [i, j]
+    grid_size: матрица, где в ячейке [i, j] хранится количество индексов в grid (остальное мусор)
+    indexes_in_grid: матрица, где в строке k хранятся индексы [i, j] такие, что grid[i, j] содержит индекс k
+    cell_size: размер ячеек, на которые делится весь экран
     """
     indexes_in_grid[:] = boids[:, 0:2] // cell_size
     grid_size[:] = 0
@@ -212,11 +287,21 @@ def calculate_grid(boids, grid, grid_size, indexes_in_grid, cell_size):
 
 
 @njit
-def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
+def get_mask_grid(grid, grid_size, indexes_in_grid, id):
     """
-    Получение маски на освнове grid
-    """
+    Функция, которая для id-го бойдса возвращает индексы боидсов, которые находится в соседних с ней клетках, т.е. "близко".
 
+    Parameters
+    ----------
+    id: номер строки, соответствующей данному боидсу
+    grid: матрица, где в ячейке [i, j] хранятся индексы боидсов, которые принадлежал клетке, соответствующей клетке [i, j]
+    grid_size: матрица, где в ячейке [i, j] хранится количество индексов в grid (остальное мусор)
+    indexes_in_grid: матрица, где в строке k хранятся индексы [i, j]
+
+    Returns
+    -------
+
+    """
     row, col = indexes_in_grid[id]
     cells = np.empty(shape=(9, 2), dtype=np.int64)
     for i in range(-1, 2, 1):
@@ -226,6 +311,9 @@ def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
                 cells[(i + 1) * 3 + (j + 1)] = np.array([this_row, this_col])
             else:
                 cells[(i + 1) * 3 + (j + 1)] = np.array([666, 666])
+                # 666 — число, которое будет означать, что мы вышли за границы массива и там хранится мусор
+
+    # у меня не получилось сделать это циклом или еще как либо из-за numba, поэтмоу я придумал такой страшный код:
 
     row, col = cells[0]
     mask0 = grid[row, col][:grid_size[row, col]] if row != 666 and col != 666 else np.empty(0, dtype=np.int64)
@@ -262,9 +350,14 @@ def get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, id):
 
 
 @njit
-def get_index(mask_grid, id):
+def get_nearby_index(mask_grid, id):
     """
     Определение индекса боида в новом массиве boids_nearby
+
+    Parameters
+    ----------
+    mask_grid: маска, которая содержит индексы (индексы, не bool!) боидсов, которые находится "рядом" с id-ым боидсом
+    id: номер строки, соответствующей данному боидсу
     """
     i_nearby = 0
     for j in range(len(mask_grid)):
@@ -275,6 +368,20 @@ def get_index(mask_grid, id):
 
 @njit
 def compute_separation_from_walls(id, indexes_in_grid, grid):
+    """
+    Вычисление ускорения, которое отталкивает птиц от стен.
+    Если птица находится в граничной клетке, т.е. рядом со стеной, то ускорение направленно в противоположную сторону от стены.
+
+    Parameters
+    ----------
+    id: номер строки, соответствующей данному боидсу
+    grid: матрица, где в ячейке [i, j] хранятся индексы боидсов, которые принадлежал клетке, соответствующей клетке [i, j]
+    indexes_in_grid: матрица, где в строке k хранятся индексы [i, j]
+
+    Returns
+    -------
+    Вектор ускорения
+    """
     max_col, max_row = grid.shape[0], grid.shape[1]
     col, row = indexes_in_grid[id]
     acceleration = np.zeros(2, dtype=float)
@@ -293,25 +400,44 @@ def compute_separation_from_walls(id, indexes_in_grid, grid):
 def calculate_acceleration(boids: np.ndarray,
                            perception_radius: float,
                            coeff: np.array,
-                           indexes_in_grid: np.array,
                            grid: np.array,
                            grid_size: np.array,
-                           cell_size,
+                           indexes_in_grid: np.array,
                            neighbours_of_main_character,
                            neighbours_of_main_character_size: np.array,
                            main_character_velocity,
                            sector_flag,
                            alpha):
     """
-    Функция, отвечающая за взаимодействие птиц между собой
+    Алгоритм boids. Вычисление ускорения птиц.
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[id] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    perception_radius: радиус, в котором боидсы видят друг друга
+    coeff: коэффициенты взаимодействия различных типов ускорений:
+        coeff[0] — cohesion
+        coeff[1] — separation
+        coeff[2] — alignment
+        coeff[3] — separation_from_walls
+        coeff[4] — noise
+    grid: матрица, где в ячейке [i, j] хранятся индексы боидсов, которые принадлежал клетке, соответствующей клетке [i, j]
+    grid_size: матрица, где в ячейке [i, j] хранится количество индексов в grid (остальное мусор)
+    indexes_in_grid: матрица, где в строке k хранятся индексы [i, j] такие, что grid[i, j] содержит индекс k
+    neighbours_of_main_character: массив, в котором хранятся индексы боидсов, которые находятся рядом с боидсом с индексом 0
+    neighbours_of_main_character_size: размер массива neighbours_of_main_character (в остальных ячейках мусор)
+    main_character_velocity: массив, который содержит координаты начала и конца вектора скорости боидса с индексом 0
+    sector_flag: если True, то зона видимости боидсов — сектор угла alpha
+    alpha: угол сектора
     """
     for i in prange(boids.shape[0]):
 
         # создание макси для боидов, находящихся рядом
 
-        mask_grid = get_mask_grid(boids, grid, grid_size, indexes_in_grid, cell_size, i)
+        mask_grid = get_mask_grid(grid, grid_size, indexes_in_grid, i)
         boids_nearby = boids[mask_grid]  # боидсы, которые находятся рядом
-        i_nearby = get_index(mask_grid, i)
+        i_nearby = get_nearby_index(mask_grid, i)
 
         # расстояния и маски расстояний
         D = compute_distance(boids_nearby, i_nearby)
@@ -367,7 +493,7 @@ def calculate_acceleration(boids: np.ndarray,
 
 def calculate_velocity(boids: np.ndarray, dt: float, velocity_range: np.array):
     """
-    Пересчет скоростей за время dt
+    Пересчет скоростей боидсов за время dt
     """
     boids[:, 2:4] += boids[:, 4:6] * dt  # меняем скорости: v += dv, где dv — изменение скорости за dt
     clip_ndarray(boids[:, 2:4], velocity_range)  # обрезаем скорости, если они вышли за velocity_range
@@ -375,16 +501,26 @@ def calculate_velocity(boids: np.ndarray, dt: float, velocity_range: np.array):
 
 def calculate_position(boids: np.ndarray, dt: float):
     """
-    Пересчет позиции за время dt
+    Пересчет позиции боидсов за время dt
     """
     boids[:, 0:2] += boids[:, 2:4] * dt  # меняем кооординаты: r += v * dt
 
+
 @njit(parallel=True)
 def fill_arrow_color(boids, arrows_color):
+    """
+    Функция, которая перекрашивает боидсов в зависимости от их модуля скорости.
+
+    Parameters
+    ----------
+    boids: матрица (N, 6), где boids[id] соответствует массиву [x, y, vx, vy, ax, ay],
+        где v и a — скорость и ускорения соответственно
+    arrows_color: вектор, где в i-ой строке находится RGBA цвет i-го боидса
+    """
     v = boids[:, 2:4]
     velocity_norm = np.sqrt(v[:, 0] ** 2 + v[:, 1] ** 2)
     max_velocity, min_velocity = np.max(velocity_norm), np.min(velocity_norm)
     G_max = 0.8
     for i in prange(boids.shape[0]):
         G = (velocity_norm[i] - min_velocity) / (max_velocity - min_velocity) * G_max
-        arrows_color[i] = np.array([1, G, 0, 0.7])
+        arrows_color[i] = np.array([1, G, 0, 0.9])

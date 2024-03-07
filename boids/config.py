@@ -4,19 +4,18 @@ import numpy as np
 
 make_video_flag = False
 W, H = 2560 / 2, 1600 / 4  # размеры экрана
-N = 5000  # кол-во птиц
+N = 10000  # кол-во птиц
 perception_radius = 1 / 30
 
-# velocity_range = (0.01, 0.05)  # ограничения на скорости
-velocity_range = (0.01, 0.1)  # ограничения на скорости
+velocity_range = (0.005, 0.05)  # ограничения на скорости
 acceleration_range = (0.0, 0.8 * velocity_range[1])  # ограничения на скорости
 
 angle = 45
 
 slider_multiplier = 10000
 cohesion_range = (0, 1.5)
-separation_range = cohesion_range
-alignment_range = cohesion_range
+separation_range = (0, 3.0)
+alignment_range = (0, 3.0)
 separation_from_walls_range = (0, 0.5)
 perception_radius_range = (1, 80)
 angle_range = (0, 360)
