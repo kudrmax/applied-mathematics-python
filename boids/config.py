@@ -2,12 +2,12 @@ import numpy as np
 
 # настраиваемые
 
+make_video_flag = False
 W, H = 2560 / 2, 1600 / 4  # размеры экрана
 N = 5000  # кол-во птиц
 perception_radius = 1 / 30
 
-# velocity_range = (0, 0.2 / (0.05 / 0.008))  # ограничения на скорости
-velocity_range = (0.01, 0.05)  # ограничения на скорости
+# velocity_range = (0.01, 0.05)  # ограничения на скорости
 velocity_range = (0.01, 0.1)  # ограничения на скорости
 acceleration_range = (0.0, 0.8 * velocity_range[1])  # ограничения на скорости
 

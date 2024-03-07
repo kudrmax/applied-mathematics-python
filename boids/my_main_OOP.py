@@ -1,5 +1,7 @@
 import time
 
+import imageio
+
 from my_funcs import *
 import config as config
 
@@ -15,6 +17,8 @@ from PyQt6.QtWidgets import QMainWindow, QSlider, QVBoxLayout, QWidget, QLabel, 
 class BoidsSimulation(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.writer = imageio.get_writer('video.mp4', fps=60)
 
         # слайдеры
 
@@ -49,6 +53,7 @@ class BoidsSimulation(QMainWindow):
         self.angle = config.angle
         self.sector_flag = False
         self.zoom_camera_flag = False
+        self.frame_count = 0
 
         # boids
         self.boids = np.zeros((self.N, 6), dtype=np.float64)  # boids[i] == [x, y, vx, vy, dvx, dvy]
@@ -265,9 +270,13 @@ class BoidsSimulation(QMainWindow):
         if self.zoom_camera_flag:
             delta_distance = self.boids[0, 0:2] - self.view.camera.center[0:2]
             self.view.camera.pan(delta_distance)
+
+        # self.canvas.measure_fps()
+        # self.setWindowTitle(f"N = {self.N}; FPS = {np.round(self.canvas.fps, 2)};")
         self.canvas.update()  # отображение
 
     def update(self):
+        self.frame_count += 1
 
         # отрисовка
         self.update_graphics()
@@ -314,8 +323,13 @@ class BoidsSimulation(QMainWindow):
         calculate_position(self.boids, self.delta_time)
 
         # конец отсчета времени
-        end_time = time.time()
+        # end_time = time.time()
         # self.delta_time = end_time - start_time
+
+        if config.make_video_flag:
+            if self.frame_count <= 2000:
+                frame = self.canvas.render(alpha=False)
+                self.writer.append_data(frame)
 
 
 if __name__ == '__main__':
