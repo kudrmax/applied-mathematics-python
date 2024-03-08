@@ -2,7 +2,7 @@ import numpy as np
 
 # настраиваемые
 
-make_video_flag = True
+make_video_flag = False
 
 W, H = 2560 / 2, 1600 / 4  # размеры экрана
 N = 5000  # кол-во птиц

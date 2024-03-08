@@ -285,7 +285,8 @@ class BoidsSimulation(QMainWindow):
             self.view.camera.zoom(6)
 
     def update_text(self):
-        self.text.text = f"N = {self.N}, coh = {self.coeffs['cohesion']}, sep = {self.coeffs['separation']}, alg = {self.coeffs['alignment']}, walls = {self.coeffs['separation_from_walls'],}, angle = {self.angle}"
+        pass
+        # self.text.text = f"N = {self.N}, coh = {self.coeffs['cohesion']}, sep = {self.coeffs['separation']}, alg = {self.coeffs['alignment']},\nwalls = {self.coeffs['separation_from_walls']}, angle = {self.angle}, FPS = {round(self.canvas.fps, 2)}"
 
     def update_graphics(self):
         """
@@ -309,6 +310,7 @@ class BoidsSimulation(QMainWindow):
 
         self.canvas.measure_fps()
         self.setWindowTitle(f"N = {self.N}; FPS = {np.round(self.canvas.fps, 2)};")
+        self.update_text()
         self.canvas.update()
 
     def update(self):
