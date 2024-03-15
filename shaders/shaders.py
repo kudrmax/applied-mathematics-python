@@ -13,6 +13,11 @@ resf = ts.vec2(float(w), float(h))
 
 pixels = ti.Vector.field(3, dtype=ti.f32, shape=res)
 
+@ti.func
+def rotate(angle):
+    c = ti.cos(angle)
+    s = ti.sin(angle)
+    return ts.mat([c, -s], [s, c])
 
 @ti.kernel
 def render(t: ti.f32):
@@ -20,9 +25,20 @@ def render(t: ti.f32):
 
     for fragCoord in ti.grouped(pixels):
         uv = (fragCoord - 0.5 * resf) / resf[1]
+        uv *= 10 * ti.sin(t * 10)
+        uv = rotate(0.1 * t * 50) @ uv
+        frac_uv = ts.fract(uv) - 0.5
 
-        col = ts.vec3(0.)
-        col.gb = uv
+        grid = ts.smoothstep(ti.abs(frac_uv).max(), 0.4, 0.5)
+        # grid_x = ti.abs(frac_uv.x)
+        col = ts.vec3(1.0, 0., 0.)
+        col = ts.mix(
+            col,
+            ts.vec3(0., 1., 0.),
+            grid
+        )
+        # col += ts.vec3(1., 0., 1.) * grid
+        # col.gb = uv
         # col.gb = uv + 0.5
 
         pixels[fragCoord] = ts.clamp(col, 0., 1.)
